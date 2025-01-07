@@ -1,7 +1,10 @@
 #include "Engine.h"
 
+
+#include <cstdint>
+
 #include <SDL.h>
-#include <box2d.h>
+#include <box2d/box2d.h>
 #include "SDL_gamecontroller.h"
 
 
@@ -46,45 +49,20 @@ static SDL_Surface* OptimizedSurface(std::string filePath, SDL_Surface* windowSu
 
 }
 
-class MyContactListener : public b2ContactListener
-{
-	void BeginContact(b2Contact* contact) {
-
-		void* userData = (void*)contact->GetFixtureA()->GetBody()->GetUserData().pointer;
-		if (userData)
-		{
-			GameObject* m = (GameObject*)userData;
-
-			void* userData2 = (void*)contact->GetFixtureB()->GetBody()->GetUserData().pointer;
-			if (userData2)
-			{
-				GameObject* m2 = (GameObject*)userData2;
-
-				m->OnCollideEnter(*m2);
-			}
-
-
-			contact->GetFixtureA()->GetBody()->GetUserData().pointer = (uintptr_t) nullptr;
-			contact->GetFixtureB()->GetBody()->GetUserData().pointer = (uintptr_t) nullptr;
-		}
-
-
-	}
-};
-
 SDL_Texture* windowSurface = nullptr;
 SDL_Texture* background = nullptr;
 SDL_Renderer* renderTarget = nullptr;
 SDL_Window* window = nullptr;
 
 //box2d setup
-b2Vec2 gravity(0.0f, 0.0f);
-b2World world(gravity);
-MyContactListener myContactListenerInstance;
+b2Vec2 gravity = { 0.0f, 0.0f };
+b2WorldDef worldDef = b2DefaultWorldDef();
+b2WorldId worldId = b2CreateWorld(&worldDef);
 
 float timeStep = 1.0f / 60.0f;
-int32 velocityIterations = 8;
-int32 positionIterations = 3;
+int subStepCount = 2;
+// int32 velocityIterations = 8;
+// int32 positionIterations = 3;
 
 InputEnum Input::mapSDLKeyToInputEnum(SDL_Keycode key) {
 	switch (key) {
@@ -165,27 +143,19 @@ namespace GameEngine {
 
 	void Engine::Update()
 	{
-
 		int prevTime = 0;
 		int currentTime = 0;
 		bool isRunning = true;
 		SDL_Event event;
 
-
-		world.SetContactListener(&myContactListenerInstance);
-
 		while (isRunning) {
-
 			prevTime = currentTime;
 			currentTime = SDL_GetTicks();
-
-
 			deltaTime = (currentTime - prevTime) / 1000.0f;
+
 
 			for (int i = 0; i < getLevel().background.size(); ++i)
 			{
-
-
 				if (getLevel().background[i].scrollingDirection == getLevel().background[i].vertical) {
 
 					getLevel().background[i].scrollRect.h += getLevel().background[i].scrollingSpeed * deltaTime;
@@ -206,9 +176,7 @@ namespace GameEngine {
 				}
 
 			}
-
 			SDL_RenderClear(renderTarget);
-
 			//Multiple background layers
 			for (int i = 0; i < getLevel().background.size(); ++i)
 			{
@@ -247,9 +215,6 @@ namespace GameEngine {
 						getLevel().background[i].scrollRect.w = 0;
 					}
 				}
-
-
-
 				SDL_RenderCopy(renderTarget, background, &scrollRect, &scrollPosition);
 				SDL_RenderCopy(renderTarget, background, &scrollRect, &scrollPosition2);
 
@@ -257,63 +222,128 @@ namespace GameEngine {
 			}
 
 
-			//Delete GameObjects
-			for (int i = 0; i < getLevel().levelObjects.size(); ++i) {
+
+			// Delete GameObjects
+
+			for (int i = getLevel().levelObjects.size() - 1; i >= 0; --i) {
 				if (getLevel().levelObjects[i]->toBeDeleted == true) {
 					getLevel().levelObjects[i]->OnDestroyed();
+
+					if (i > 1)
+					{
+						b2DestroyBody(*getLevel().levelObjects[i]->bodyId);
+						delete getLevel().levelObjects[i]->bodyDef;
+						delete getLevel().levelObjects[i]->bodyId;
+					}
+					else
+					{
+						std::cout << "Spawner delete" << i << std::endl;
+					}
+					delete getLevel().levelObjects[i];
 					getLevel().levelObjects.erase(getLevel().levelObjects.begin() + i);
 				}
 			}
 
-			b2Body* bodyList = world.GetBodyList();
-
-			std::vector<b2Body*> bodiesToDestroy;
-
-			while (bodyList != nullptr)
+			for (int i = getLevel().levelObjects.size()-1; i >= 0; --i)
 			{
-
-				bodiesToDestroy.push_back(bodyList);
-				bodyList = bodyList->GetNext();
-
-			}
-			for (b2Body* body : bodiesToDestroy)
-			{
-				world.DestroyBody(body);
-			}
-
-			bodiesToDestroy.clear();
-
-			//Update GameObjects
-			for (int i = 0; i < getLevel().levelObjects.size(); ++i) {
-				getLevel().levelObjects[i]->OnUpdate();
-
-				Animation* spriteAnimation = &getLevel().levelObjects[i]->animation;
-
-				b2BodyDef bodyDef;
-				bodyDef.type = b2_dynamicBody;
-				bodyDef.position.Set(getLevel().levelObjects[i]->position.x, getLevel().levelObjects[i]->position.y);
-				bodyDef.userData.pointer = (uintptr_t)getLevel().levelObjects[i];
-				b2Body* body = world.CreateBody(&bodyDef);
-				b2PolygonShape dynamicBox;
-				float bodyWidth = getLevel().levelObjects[i]->collisionBoxSize.w;
-				float bodyHeight = getLevel().levelObjects[i]->collisionBoxSize.h;
-				bodyWidth = bodyWidth / 2;
-				bodyHeight = bodyHeight / 2;
-				b2Vec2 collisionCenter;
-				collisionCenter.Set(bodyWidth, bodyHeight);
-				dynamicBox.SetAsBox(bodyWidth, bodyHeight, collisionCenter, 0.0f);
-				b2FixtureDef fixtureDef;
-				fixtureDef.shape = &dynamicBox;
-				fixtureDef.density = 1.0f;
-				fixtureDef.friction = 0.3f;
-				fixtureDef.isSensor = true;
-				body->CreateFixture(&fixtureDef);
-
-				for (int32 i = 0; i < 60; ++i)
+				auto obj = getLevel().levelObjects[i];
+				if (obj->bodyId != nullptr)
 				{
-					world.Step(timeStep, velocityIterations, positionIterations);
+					b2DestroyBody(*obj->bodyId);
 				}
+			}
 
+			//Manage Created Objects
+			for (int i = 0; i < getLevel().levelObjects.size(); ++i) {
+				GameObject* obj = getLevel().levelObjects[i];
+
+				obj->OnUpdate();
+
+				Animation* spriteAnimation = &obj->animation;
+
+
+				//THIS IS TO IGNORE SPAWNERS. THE FIRST TWO OBJECTS IN THE LEVEL OBJECTS VECTOR ARE SPAWNERS
+					//This is a just a workaround for now. I will implement a better way to handle this later, because i need to create
+					//a bool variable for objects for the user to want or not a box2d body but right now i dont have time for that.
+
+				if (i > 1)
+				{
+					float bodyWidth = getLevel().levelObjects[i]->collisionBoxSize.w;
+					float bodyHeight = getLevel().levelObjects[i]->collisionBoxSize.h;
+					bodyWidth = bodyWidth / 2.0f;
+					bodyHeight = bodyHeight / 2.0f;
+
+					
+					b2BodyDef* bodyDef = new b2BodyDef;
+					*bodyDef = b2DefaultBodyDef();
+					bodyDef->type = b2_dynamicBody;
+					bodyDef->position = { getLevel().levelObjects[i]->position.x, getLevel().levelObjects[i]->position.y };
+					//bodyDef-> = getLevel().levelObjects[i]->isBullet;
+					bodyDef->userData = getLevel().levelObjects[i];
+
+
+					b2BodyId* bodyId = new b2BodyId;
+					*bodyId = b2CreateBody(worldId, bodyDef);
+
+					b2Vec2 bodyCenter{ bodyWidth, bodyHeight };
+					float angle = 4.0f;
+
+					b2Polygon* dynamicBox = new b2Polygon;
+					//*dynamicBox = b2MakeBox(bodyWidth, bodyHeight);
+					*dynamicBox = b2MakeOffsetBox(bodyWidth, bodyHeight, bodyCenter, b2MakeRot(angle * b2_pi));
+
+
+					b2ShapeDef* shapeDef = new b2ShapeDef;
+					*shapeDef = b2DefaultShapeDef();
+					shapeDef->density = 1.0f;
+					shapeDef->friction = 0.3f;
+
+					//shapeDef->enableSensorEvents = getLevel().levelObjects[i]->hasSense;
+
+					//shapeDef->enableSensorEvents = true;
+					//shapeDef->isSensor = getLevel().levelObjects[i]->hasSense;
+
+					//shapeDef->enableContactEvents = true;
+
+					shapeDef->userData = getLevel().levelObjects[i];
+
+					shapeDef->enableContactEvents = true;
+
+					b2ShapeId* shapeId = new b2ShapeId;
+					*shapeId = b2CreatePolygonShape(*bodyId, shapeDef, dynamicBox);
+
+					getLevel().levelObjects[i]->bodyId = bodyId;
+					getLevel().levelObjects[i]->bodyDef = bodyDef;
+					getLevel().levelObjects[i]->shapeId = shapeId;
+					getLevel().levelObjects[i]->shapeDef = shapeDef;
+					getLevel().levelObjects[i]->boxCollision = dynamicBox;
+				}
+				
+				//WORLD STEP DOESNT MAKE SENSE USING IT IN A OBJECT UPDATE LOOP IT SHOULD BE IN WORLD UPDATE
+				
+
+// 				b2World_Step(worldId, timeStep, subStepCount);
+// 				sensorListener();
+// 				contactListener();
+
+
+// 				for (int32_t i = 0; i < 90; ++i) {
+// 					if (B2_IS_NULL(worldId) != 0) {
+// 						std::cerr << "Invalid worldId detected." << std::endl;
+// 						break;
+// 					}
+// 					else {
+// 						try {
+// 							b2World_Step(worldId, timeStep, subStepCount);
+// 							sensorListener();
+// 							contactListener();
+// 						}
+// 						catch (const std::exception& e) {
+// 							std::cerr << "Exception during b2World_Step: " << e.what() << std::endl;
+// 							__debugbreak();
+// 						}
+// 					}
+// 				}
 
 				if (spriteAnimation->tilemapPath != "") {
 
@@ -440,12 +470,32 @@ namespace GameEngine {
 							SDL_RenderCopyEx(renderTarget, sprite, &spriteRect, &spritePos, getLevel().levelObjects[i]->rotation, NULL, SDL_FLIP_NONE);
 						}
 						SDL_DestroyTexture(sprite);
-
-
-
 					}
 				}
+
+				
 			}
+
+			b2World_Step(worldId, timeStep, subStepCount);
+			contactListener();
+
+// 			for (int32_t i = 0; i < 60; ++i) {
+// 				if (B2_IS_NULL(worldId) != 0) {
+// 					std::cerr << "Invalid worldId detected." << std::endl;
+// 					break;
+// 				}
+// 				else {
+// 					try {
+// 						b2World_Step(worldId, timeStep, subStepCount);
+// 						contactListener();
+// 						//sensorListener();
+// 					}
+// 					catch (const std::exception& e) {
+// 						std::cerr << "Exception during b2World_Step: " << e.what() << std::endl;
+// 						__debugbreak();
+// 					}
+// 				}
+// 			}
 
 			SDL_RenderPresent(renderTarget);
 
@@ -456,7 +506,28 @@ namespace GameEngine {
 			}
 
 
-		}
+			/////////////////////////DEBUG TESTING/////////////////////////
+			//You can use this to debug the player position, i was using this to test if the box2d setup was working 
+			// and it seems to be updating the box2d variables correctly
+			//Debug player position
+			//std::cout << "Position absolute: " << getLevel().levelObjects[2]->position.x << " " << getLevel().levelObjects[2]->position.y << std::endl;
+			//std::cout << "Position box: " << getLevel().levelObjects[2]->bodyDef->position.x << " " << getLevel().levelObjects[2]->bodyDef->position.y << std::endl;
+			//Debug player group
+			//std::cout << "Position: " << static_cast<GameObject*>(getLevel().levelObjects[2]->bodyDef->userData)->objectGroup << std::endl;
+			
+			//Debug enemy position - Always debugs one of the enemies positions. I was using this to test if the box2d setup was working
+			// on new objects created after the game started and it seems to be working correctly, so the problem is related to the sensor itself i think
+			//if (getLevel().levelObjects.size() > 4)
+			//{
+			//	std::cout << "Position: " << getLevel().levelObjects[3]->bodyDef->position.x << " " << getLevel().levelObjects[3]->bodyDef->position.y << std::endl;
+			//}
+
+
+			//Debug collision box size from player its being created with 64 by 64. Its bigger than the other collision that is being detected that has the size of 32x32
+			//std::cout << "Collision Box: " << getLevel().levelObjects[2]->collisionBoxSize.w << " " << getLevel().levelObjects[2]->collisionBoxSize.h << std::endl;
+
+
+}
 
 		SDL_DestroyWindow(window);
 		SDL_DestroyRenderer(renderTarget);
@@ -466,13 +537,19 @@ namespace GameEngine {
 		background = nullptr;
 		renderTarget = nullptr;
 
+		b2DestroyWorld(worldId);
+		worldId = b2_nullWorldId;
+
 		SDL_Quit();
 	}
 
 	void Engine::Initialize(GameWindow windowSettings)
 	{
-		windowDisplay = windowSettings;
+		//Set Gravity
+		worldDef.gravity = gravity;
 
+
+		windowDisplay = windowSettings;
 		SDL_GameController* controller;
 		int i;
 
@@ -497,6 +574,7 @@ namespace GameEngine {
 		window = SDL_CreateWindow(windowSettings.windowName, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowSettings.windowWidth, windowSettings.windowHeight, SDL_WINDOW_OPENGL);
 		renderTarget = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
+		b2World_EnableContinuous(worldId, true);
 
 		Update();
 	}
@@ -515,6 +593,74 @@ namespace GameEngine {
 	{
 		return mainLevel;
 	}
+
+	void Engine::sensorListener()
+	{
+		b2SensorEvents sensorEvents = b2World_GetSensorEvents(worldId);
+
+		for (int i = 0; i < sensorEvents.beginCount; ++i)
+		{
+			b2SensorBeginTouchEvent* beginTouch = sensorEvents.beginEvents + i;
+			void* myUserData = b2Shape_GetUserData(beginTouch->visitorShapeId);
+			if (myUserData)
+			{
+				GameObject* m = static_cast<GameObject*>(myUserData);
+
+				void* myUserData2 = b2Shape_GetUserData(beginTouch->sensorShapeId);
+				std::cout << "Sensor detected collision with object group: " << m->objectGroup << std::endl;
+
+				if (myUserData2)
+				{
+					GameObject* m2 = static_cast<GameObject*>(myUserData2);
+					m->OnCollideEnter(*m2);
+					if (m2->objectGroup == "player")
+					{
+						std::cout << "Sensor detected collision with object group: " << m2->objectGroup << std::endl;
+					}
+				}
+			}
+		}
+	}
+
+	void Engine::contactListener() {
+		b2ContactEvents contactEvents = b2World_GetContactEvents(worldId);
+
+		if (contactEvents.beginCount > 0) {
+			//std::cout << "Contact Events Begin Count: " << contactEvents.beginCount << std::endl;
+		}
+
+		for (int i = 0; i < contactEvents.beginCount; ++i)
+		{
+			b2ContactBeginTouchEvent* beginTouch = contactEvents.beginEvents + i;
+			void* myUserData = b2Shape_GetUserData(beginTouch->shapeIdA);
+			if (myUserData)
+			{
+				GameObject* m = static_cast<GameObject*>(myUserData);
+				//std::cout << m->objectGroup << std::endl;
+				void* myUserData2 = b2Shape_GetUserData(beginTouch->shapeIdB);
+				//std::cout << "Collision A: " << m->objectGroup << " " << m->collisionBoxSize.w << " " << m->collisionBoxSize.h;
+				
+				if (myUserData2)
+				{
+					GameObject* m2 = static_cast<GameObject*>(myUserData2);
+					m->OnCollideEnter(*m2);
+					//std::cout << " Collision B: " << m2->objectGroup << " " << m2->collisionBoxSize.w << " " << m2->collisionBoxSize.h << std::endl;
+				}
+			}
+		}
+	}
+
+
+// 	bool Engine::b2OverlapResultFcn(b2ShapeId id) {
+// 		
+// 		GameObject* obj = static_cast<GameObject*>(b2Shape_GetUserData(id));
+// 		if (obj != nullptr && obj->objectGroup)
+// 		{
+// 			return true;
+// 		}
+// 		// continue the query
+// 		return true;
+// 	}
 }
 
 void GameLevel::setLayerSize(int layerSize)
@@ -527,7 +673,6 @@ void GameObject::Destroy()
 	toBeDeleted = true;
 }
 
-
 void GameLevel::addObject(GameObject* obj)
 {
 	levelObjects.push_back(obj);
@@ -539,5 +684,4 @@ int Animation::GetSpriteWidth()
 	int ret = animationRect.w / tilemapSize.w;
 	return ret;
 }
-
 

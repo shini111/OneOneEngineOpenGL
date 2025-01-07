@@ -1,5 +1,10 @@
 #include "Engine.h"
 #include <random>
+#include <cmath>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 #undef main
 
@@ -13,6 +18,10 @@ float* GetGlobalRotation() {
 
 class Enemy : public GameObject {
 public:
+	Enemy(bool visibility = true, bool isBullet = false, bool hasSense = false)
+		: GameObject(visibility, isBullet, hasSense) {
+	}
+
 	int healthPoints = 1;
 
 	void showDamageFeedback() {
@@ -70,6 +79,8 @@ private:
 };
 class explosion : public GameObject {
 public:
+	explosion(bool visibility = true, bool isBullet = false, bool hasSense = false)
+		: GameObject(visibility, isBullet, hasSense) {}
 
 	void OnStart() override {
 
@@ -87,6 +98,11 @@ public:
 
 class missile : public GameObject {
 public:
+
+	missile(bool visibility = true, bool isBullet = false, bool hasSense = true)
+		: GameObject(visibility, isBullet, hasSense) {
+	}
+
 	float moveSpeed = -250.0f;
 
 	int firePower = 0;
@@ -113,7 +129,6 @@ public:
 
 		objectGroup = "bullet";
 
-		// 		rotation = globalRotation;
 		rotation = *GetGlobalRotation();
 	}
 
@@ -145,6 +160,11 @@ public:
 
 class rusher : public Enemy {
 public:
+
+	rusher(bool visibility = true, bool isBullet = false, bool hasSense = true)
+		: Enemy(visibility, isBullet, hasSense) {
+	}
+
 	float moveSpeed = -150.0f;
 	void OnStart() override {
 		healthPoints = 2;
@@ -172,8 +192,6 @@ public:
 	void OnCollideEnter(GameObject& contact) override {
 		if (contact.objectGroup == "bullet") {
 
-
-
 			explosion* boom = new explosion();
 			boom->position.x = position.x;
 			boom->position.y = position.y;
@@ -193,6 +211,10 @@ public:
 
 class enemyProjectile : public GameObject {
 public:
+	enemyProjectile(bool visibility = true, bool isBullet = true, bool hasSense = true)
+		: GameObject(visibility, isBullet, hasSense) {
+	}
+
 	float moveSpeed = -250.0f;
 
 	void OnStart() override {
@@ -216,6 +238,11 @@ public:
 
 class loner : public Enemy {
 public:
+
+	loner(bool visibility = true, bool isBullet = false, bool hasSense = true)
+		: Enemy(visibility, isBullet, hasSense) {
+	}
+
 	float moveSpeed = 70.0f;
 	float time = 0.0f;
 	float timeCooldown = 2.0f;
@@ -236,7 +263,8 @@ public:
 	void OnCollideEnter(GameObject& contact) override {
 		if (contact.objectGroup == "bullet") {
 
-			explosion* boom = new explosion();
+			explosion* boom = new explosion(true, false, false);
+
 			boom->position.x = position.x;
 			boom->position.y = position.y;
 			engine.getLevel().addObject(boom);
@@ -265,7 +293,7 @@ public:
 
 		checkDamageFeedback();
 
-		if (position.y > 480) {
+		if (position.x > 700) {
 			Destroy();
 		}
 
@@ -275,7 +303,9 @@ public:
 
 class ally : public Pawn {
 public:
-
+	ally(bool visibility = true, bool isBullet = false, bool hasSense = false)
+		: Pawn(visibility, isBullet, hasSense) {
+	}
 	int shipHealthMax = 5;
 	int shipHealth = 5;
 
@@ -295,6 +325,7 @@ public:
 	void TakeShipDamage() {
 		if (damageCooldown <= 0)
 		{
+			std::cout << "Ship Damaged" << std::endl;
 			shipHealth -= 1;
 			damageCooldown = damageCooldownDefault;
 		}
@@ -312,7 +343,7 @@ public:
 	void ShootCheck() {
 		if (input.IsGamepadButtonPressed(GamepadButton::A, false)) {
 			if (!keyPressed) {
-				missile* bullet = new missile();
+				missile* bullet = new missile(true, true, true);
 				bullet->position.x = position.x + bulletOffset.x;
 				bullet->position.y = position.y + bulletOffset.y;
 				bullet->firePower = firePower;
@@ -331,14 +362,25 @@ private:
 
 class spaceship : public ally {
 public:
+	spaceship(bool visibility = true, bool isBullet = false, bool hasSense = false)
+		: ally(visibility, isBullet, hasSense) {
+	}
+
+	int textureDimentions[2] = { 7,1 };
 
 	std::string currentAnimation = "";
 	int animationState = 0;
 
 	bool isGameOver = false;
 
+	bool canTakeDamage = true;
+	float damageCooldown = 0;
+
+
 	void OnStart() override {
+
 		int textureDimentions[2] = { 7,1 };
+
 
 		shipHealthMax = 5;
 		shipHealth = 5;
@@ -362,44 +404,43 @@ public:
 
 	void OnUpdate() override {
 
-		int textureDimentions[2] = { 7,1 };
 
 
 		if (isGameOver == false)
 		{
+
 			ShootCheck();
 			checkDamageCooldown();
 
 			if (input.IsGamepadButtonPressed(GamepadButton::DPadLeft, false)) {
 				position.x -= movementSpeed * engine.deltaTime;
+				animationState = 2;
 			}
 			else if (input.IsGamepadButtonPressed(GamepadButton::DPadRight, false)) {
 				position.x += movementSpeed * engine.deltaTime;
-			}
-
-			if (input.IsGamepadButtonPressed(GamepadButton::DPadUp, false)) {
-				position.y -= movementSpeed * engine.deltaTime;
 				animationState = 1;
-			}
-			else if (input.IsGamepadButtonPressed(GamepadButton::DPadDown, false)) {
-				position.y += movementSpeed * engine.deltaTime;
-				animationState = 2;
 			}
 			else {
 				animationState = 0;
 			}
+			if (input.IsGamepadButtonPressed(GamepadButton::DPadUp, false)) {
+				position.y -= movementSpeed * engine.deltaTime;
+			}
+			else if (input.IsGamepadButtonPressed(GamepadButton::DPadDown, false)) {
+				position.y += movementSpeed * engine.deltaTime;
+			}
 		}
 
-		if (animationState == 1 && currentAnimation != "Up")
+		if (animationState == 1 && currentAnimation != "Right")
 		{
-			currentAnimation = "Up";
+			currentAnimation = "Right";
 
 			animation = Animation("resources/graphics/Ship1.bmp", 0.1f, textureDimentions, false, { AnimationCoord(4,0),AnimationCoord(5,0),AnimationCoord(6,0) });
 			animation.spriteIndex = 0;
 		}
-		else if (animationState == 2 && currentAnimation != "Down")
+		else if (animationState == 2 && currentAnimation != "Left")
 		{
-			currentAnimation = "Down";
+			currentAnimation = "Left";
 			animation = Animation("resources/graphics/Ship1.bmp", 0.1f, textureDimentions, false, { AnimationCoord(2,0),AnimationCoord(1,0),AnimationCoord(0,0) });
 			animation.spriteIndex = 0;
 		}
@@ -419,17 +460,58 @@ public:
 		}
 	}
 
+
 	void OnCollideEnter(GameObject& contact) override {
+
+		int textureDimentions[2] = { 7,3 };
+
 		if (contact.objectGroup == "enemyBullet") {
 			explosion* boom = new explosion();
 			boom->position.x = position.x;
 			boom->position.y = position.y;
+			if (animationState == 1 && currentAnimation != "Right")
+			{
+				currentAnimation = "Up";
+
+				animation = Animation("resources/graphics/Ship2.bmp", 0.1f, textureDimentions, false,
+					{
+					AnimationCoord(4,0),AnimationCoord(5,0),AnimationCoord(6,0), AnimationCoord(4,0),AnimationCoord(5,0),AnimationCoord(6,0), AnimationCoord(4,0),AnimationCoord(5,0),AnimationCoord(6,0),
+					AnimationCoord(6,1),AnimationCoord(6,1),AnimationCoord(6,1), AnimationCoord(4,1),AnimationCoord(5,1),AnimationCoord(6,1), AnimationCoord(4,1),AnimationCoord(5,1),AnimationCoord(6,1),
+					AnimationCoord(6,2),AnimationCoord(6,2),AnimationCoord(6,2), AnimationCoord(4,2),AnimationCoord(5,2),AnimationCoord(6,2), AnimationCoord(4,2),AnimationCoord(5,2),AnimationCoord(6,2)
+					}
+				);
+				animation.spriteIndex = 0;
+			}
+			else if (animationState == 2 && currentAnimation != "Left")
+			{
+				currentAnimation = "Down";
+				animation = Animation("resources/graphics/Ship2.bmp", 0.1f, textureDimentions, false,
+					{
+					AnimationCoord(2,0),AnimationCoord(1,0),AnimationCoord(0,0) , AnimationCoord(2,0),AnimationCoord(1,0),AnimationCoord(0,0), AnimationCoord(2,0),AnimationCoord(1,0),AnimationCoord(0,0),
+					AnimationCoord(2,1),AnimationCoord(1,1),AnimationCoord(0,1), AnimationCoord(2,1),AnimationCoord(1,1),AnimationCoord(0,1), AnimationCoord(2,1),AnimationCoord(1,1),AnimationCoord(0,1),
+					AnimationCoord(2,2),AnimationCoord(1,2),AnimationCoord(0,2), AnimationCoord(2,2),AnimationCoord(1,2),AnimationCoord(0,2), AnimationCoord(2,2),AnimationCoord(1,2),AnimationCoord(0,2)
+					}
+				);
+				animation.spriteIndex = 0;
+			}
+			else if (animationState == 0 && currentAnimation != "Idle")
+			{
+				currentAnimation = "Idle";
+				animation = Animation("resources/graphics/Ship1.bmp", 0.1f, textureDimentions, false,
+					{
+						AnimationCoord(3,0), AnimationCoord(3,1), AnimationCoord(3,2),AnimationCoord(3,0), AnimationCoord(3,1), AnimationCoord(3,2),AnimationCoord(3,0), AnimationCoord(3,1), AnimationCoord(3,2)
+					}
+				);
+				animation.spriteIndex = 0;
+			}
 			engine.getLevel().addObject(boom);
 			TakeShipDamage();
 			contact.Destroy();
 		}
 
 		if (contact.objectGroup == "enemy") {
+			animation = Animation("resources/graphics/Ship2.bmp", 0.1f, textureDimentions, false, { AnimationCoord(3,0), AnimationCoord(3,1), AnimationCoord(3,2),AnimationCoord(3,0), AnimationCoord(3,1), AnimationCoord(3,2),AnimationCoord(3,0), AnimationCoord(3,1), AnimationCoord(3,2) });
+			animation.spriteIndex = 0;
 			TakeShipDamage();
 		}
 	}
@@ -439,12 +521,22 @@ public:
 class rusherSpawner : public GameObject
 {
 public:
+	rusherSpawner(bool visibility = false, bool isBullet = false, bool hasSense = false)
+		: GameObject(visibility, isBullet, hasSense) {
+	}
+
+
 	float spawnCooldown = 2.0f;
 	float time = 0.0f;
+
+	void OnStart() override {
+		objectGroup = "RSpwaner";
+	}
+
 	void OnUpdate() override {
 		time += 1 * engine.deltaTime;
 		if (time > spawnCooldown) {
-			rusher* enemy = new rusher();
+			rusher* enemy = new rusher(true, false, true);
 
 			enemy->position.x = 400.0f;
 			enemy->position.x = rand() % 540 + 100;
@@ -458,12 +550,21 @@ public:
 class lonerSpawner : public GameObject
 {
 public:
+	void OnStart() override {
+		objectGroup = "LSpwaner";
+
+		position.x = 0;
+	}
+	lonerSpawner(bool visibility = false, bool isBullet = false, bool hasSense = false)
+		: GameObject(visibility, isBullet, hasSense) {
+	}
 	float spawnCooldown = 4.0f;
 	float time = 0.0f;
+
 	void OnUpdate() override {
 		time += 1 * engine.deltaTime;
 		if (time > spawnCooldown) {
-			loner* enemy = new loner();
+			loner* enemy = new loner(true, false, true);
 			enemy->position.x = -100.0f;
 			enemy->position.y = rand() % 200 + 40;
 			engine.getLevel().addObject(enemy);
@@ -501,10 +602,20 @@ int main()
 
 	rusherSpawner* spawner = new rusherSpawner();
 	engine.getLevel().addObject(spawner);
+
 	lonerSpawner* spawner2 = new lonerSpawner();
 	engine.getLevel().addObject(spawner2);
 
+
+	rusher* enemy = new rusher(true, false, true);
+
+
 	engine.getLevel().addObject(ship);
+
+	enemy->position.x = 400.0f;
+	enemy->position.x = rand() % 540 + 100;
+	enemy->position.y = -100.0f;
+	engine.getLevel().addObject(enemy);
 
 	engine.Initialize(gameWindow);
 }
