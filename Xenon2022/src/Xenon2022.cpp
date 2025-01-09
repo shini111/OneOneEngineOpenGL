@@ -2,6 +2,7 @@
 #include <random>
 #include <cmath>
 
+// Define M_PI if not defined, to be used in mathematical fuctions if needed
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif

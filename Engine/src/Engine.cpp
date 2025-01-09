@@ -1,58 +1,47 @@
 #include "Engine.h"
-
+#include "Shader.h"
 
 #include <cstdint>
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <map>
 
 #include <SDL.h>
 #include <box2d/box2d.h>
 #include "SDL_gamecontroller.h"
-
-
-SDL_Renderer* SDL_CreateRenderer(SDL_Window* window, int index, Uint32 flags);
-SDL_Texture* SDL_CreateTextureFromSurface(SDL_Renderer* renderer, SDL_Surface* surface);
+#include "glad/glad.h"
+#include "stb_image.h"
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 Input input;
 
-static SDL_Texture* LoadTexture(std::string filePath, SDL_Renderer* renderTarget) {
-	SDL_Texture* texture = nullptr;
+static GLuint LoadTexture(const std::string& filePath) {
 	SDL_Surface* surface = SDL_LoadBMP(filePath.c_str());
-	if (surface == NULL)
-		std::cout << "Error1" << std::endl;
-	else
-	{
-		SDL_SetColorKey(surface, SDL_TRUE, SDL_MapRGB(surface->format, 255, 0, 255));
-		texture = SDL_CreateTextureFromSurface(renderTarget, surface);
-		if (texture == NULL)
-			std::cout << "Error2" << std::endl;
+	if (!surface) {
+		std::cerr << "Error loading image: " << filePath << std::endl;
+		return 0;
 	}
 
-	SDL_FreeSurface(surface);
+	GLuint texture;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
 
+	int mode = surface->format->BytesPerPixel == 4 ? GL_RGBA : GL_RGB;
+	glTexImage2D(GL_TEXTURE_2D, 0, mode, surface->w, surface->h, 0, mode, GL_UNSIGNED_BYTE, surface->pixels);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	SDL_FreeSurface(surface);
 	return texture;
 }
 
-static SDL_Surface* OptimizedSurface(std::string filePath, SDL_Surface* windowSurface) {
-	SDL_Surface* optimizedSurface = nullptr;
-	SDL_Surface* surface = SDL_LoadBMP(filePath.c_str());
-
-	if (surface == nullptr) {
-		std::cout << "Error loading image: " << filePath << std::endl;
-	}
-	else {
-		optimizedSurface = SDL_ConvertSurface(surface, windowSurface->format, 0);
-		if (optimizedSurface == nullptr) {
-			std::cout << "Error optimizing surface: " << filePath << std::endl;
-		}
-		SDL_FreeSurface(surface);
-		return optimizedSurface;
-	}
-
-}
-
-SDL_Texture* windowSurface = nullptr;
-SDL_Texture* background = nullptr;
-SDL_Renderer* renderTarget = nullptr;
 SDL_Window* window = nullptr;
+SDL_GLContext glContext = nullptr;
+Shader* shader = nullptr;
 
 //box2d setup
 b2Vec2 gravity = { 0.0f, 0.0f };
@@ -61,8 +50,7 @@ b2WorldId worldId = b2CreateWorld(&worldDef);
 
 float timeStep = 1.0f / 60.0f;
 int subStepCount = 2;
-// int32 velocityIterations = 8;
-// int32 positionIterations = 3;
+
 
 InputEnum Input::mapSDLKeyToInputEnum(SDL_Keycode key) {
 	switch (key) {
@@ -141,422 +129,24 @@ bool Input::IsGamepadButtonPressed(GamepadButton button, bool singleClick) {
 
 namespace GameEngine {
 
-	void Engine::Update()
-	{
-		int prevTime = 0;
-		int currentTime = 0;
-		bool isRunning = true;
-		SDL_Event event;
-
-		while (isRunning) {
-			prevTime = currentTime;
-			currentTime = SDL_GetTicks();
-			deltaTime = (currentTime - prevTime) / 1000.0f;
-
-
-			for (int i = 0; i < getLevel().background.size(); ++i)
-			{
-				if (getLevel().background[i].scrollingDirection == getLevel().background[i].vertical) {
-
-					getLevel().background[i].scrollRect.h += getLevel().background[i].scrollingSpeed * deltaTime;
-
-					if (getLevel().background[i].scrollingSpeed > 0)
-						getLevel().background[i].scrollRect.h2 = getLevel().background[i].scrollRect.h - windowDisplay.windowHeight;
-					else if (getLevel().background[i].scrollingSpeed < 0)
-						getLevel().background[i].scrollRect.h2 = getLevel().background[i].scrollRect.h + windowDisplay.windowHeight;
-				}
-				else {
-
-					getLevel().background[i].scrollRect.w += getLevel().background[i].scrollingSpeed * deltaTime;
-
-					if (getLevel().background[i].scrollingSpeed > 0)
-						getLevel().background[i].scrollRect.w2 = getLevel().background[i].scrollRect.w - windowDisplay.windowWidth;
-					else if (getLevel().background[i].scrollingSpeed < 0)
-						getLevel().background[i].scrollRect.w2 = getLevel().background[i].scrollRect.w + windowDisplay.windowWidth;
-				}
-
-			}
-			SDL_RenderClear(renderTarget);
-			//Multiple background layers
-			for (int i = 0; i < getLevel().background.size(); ++i)
-			{
-				background = LoadTexture(getLevel().background[i].background_path, renderTarget);
-
-				SDL_Rect scrollRect;
-				SDL_Rect scrollPosition;
-				SDL_Rect scrollPosition2;
-
-				scrollRect.x = 0;
-				scrollRect.y = 0;
-
-				SDL_QueryTexture(background, NULL, NULL, &scrollRect.w, &scrollRect.h);
-
-				scrollPosition.x = getLevel().background[i].scrollRect.w;
-				scrollPosition2.x = getLevel().background[i].scrollRect.w2;
-
-				scrollPosition.y = getLevel().background[i].scrollRect.h;
-				scrollPosition2.y = getLevel().background[i].scrollRect.h2;
-
-				scrollPosition.w = scrollPosition2.w = windowDisplay.windowWidth;
-				scrollPosition.h = scrollPosition2.h = windowDisplay.windowHeight;
-
-
-				if (getLevel().background[i].scrollingDirection == getLevel().background[i].vertical) {
-
-					if (getLevel().background[i].scrollRect.h >= scrollPosition.h || getLevel().background[i].scrollRect.h <= -scrollPosition.h)
-					{
-						getLevel().background[i].scrollRect.h = 0;
-					}
-				}
-				else {
-
-					if (getLevel().background[i].scrollRect.w >= scrollPosition.w || getLevel().background[i].scrollRect.w <= -scrollPosition.w)
-					{
-						getLevel().background[i].scrollRect.w = 0;
-					}
-				}
-				SDL_RenderCopy(renderTarget, background, &scrollRect, &scrollPosition);
-				SDL_RenderCopy(renderTarget, background, &scrollRect, &scrollPosition2);
-
-				SDL_DestroyTexture(background);
-			}
-
-
-
-			// Delete GameObjects
-
-			for (int i = getLevel().levelObjects.size() - 1; i >= 0; --i) {
-				if (getLevel().levelObjects[i]->toBeDeleted == true) {
-					getLevel().levelObjects[i]->OnDestroyed();
-
-					if (i > 1)
-					{
-						b2DestroyBody(*getLevel().levelObjects[i]->bodyId);
-						delete getLevel().levelObjects[i]->bodyDef;
-						delete getLevel().levelObjects[i]->bodyId;
-					}
-					else
-					{
-						std::cout << "Spawner delete" << i << std::endl;
-					}
-					delete getLevel().levelObjects[i];
-					getLevel().levelObjects.erase(getLevel().levelObjects.begin() + i);
-				}
-			}
-
-			for (int i = getLevel().levelObjects.size()-1; i >= 0; --i)
-			{
-				auto obj = getLevel().levelObjects[i];
-				if (obj->bodyId != nullptr)
-				{
-					b2DestroyBody(*obj->bodyId);
-				}
-			}
-
-			//Manage Created Objects
-			for (int i = 0; i < getLevel().levelObjects.size(); ++i) {
-				GameObject* obj = getLevel().levelObjects[i];
-
-				obj->OnUpdate();
-
-				Animation* spriteAnimation = &obj->animation;
-
-
-				//THIS IS TO IGNORE SPAWNERS. THE FIRST TWO OBJECTS IN THE LEVEL OBJECTS VECTOR ARE SPAWNERS
-					//This is a just a workaround for now. I will implement a better way to handle this later, because i need to create
-					//a bool variable for objects for the user to want or not a box2d body but right now i dont have time for that.
-
-				if (i > 1)
-				{
-					float bodyWidth = getLevel().levelObjects[i]->collisionBoxSize.w;
-					float bodyHeight = getLevel().levelObjects[i]->collisionBoxSize.h;
-					bodyWidth = bodyWidth / 2.0f;
-					bodyHeight = bodyHeight / 2.0f;
-
-					
-					b2BodyDef* bodyDef = new b2BodyDef;
-					*bodyDef = b2DefaultBodyDef();
-					bodyDef->type = b2_dynamicBody;
-					bodyDef->position = { getLevel().levelObjects[i]->position.x, getLevel().levelObjects[i]->position.y };
-					//bodyDef-> = getLevel().levelObjects[i]->isBullet;
-					bodyDef->userData = getLevel().levelObjects[i];
-
-
-					b2BodyId* bodyId = new b2BodyId;
-					*bodyId = b2CreateBody(worldId, bodyDef);
-
-					b2Vec2 bodyCenter{ bodyWidth, bodyHeight };
-					float angle = 4.0f;
-
-					b2Polygon* dynamicBox = new b2Polygon;
-					//*dynamicBox = b2MakeBox(bodyWidth, bodyHeight);
-					*dynamicBox = b2MakeOffsetBox(bodyWidth, bodyHeight, bodyCenter, b2MakeRot(angle * b2_pi));
-
-
-					b2ShapeDef* shapeDef = new b2ShapeDef;
-					*shapeDef = b2DefaultShapeDef();
-					shapeDef->density = 1.0f;
-					shapeDef->friction = 0.3f;
-
-					//shapeDef->enableSensorEvents = getLevel().levelObjects[i]->hasSense;
-
-					//shapeDef->enableSensorEvents = true;
-					//shapeDef->isSensor = getLevel().levelObjects[i]->hasSense;
-
-					//shapeDef->enableContactEvents = true;
-
-					shapeDef->userData = getLevel().levelObjects[i];
-
-					shapeDef->enableContactEvents = true;
-
-					b2ShapeId* shapeId = new b2ShapeId;
-					*shapeId = b2CreatePolygonShape(*bodyId, shapeDef, dynamicBox);
-
-					getLevel().levelObjects[i]->bodyId = bodyId;
-					getLevel().levelObjects[i]->bodyDef = bodyDef;
-					getLevel().levelObjects[i]->shapeId = shapeId;
-					getLevel().levelObjects[i]->shapeDef = shapeDef;
-					getLevel().levelObjects[i]->boxCollision = dynamicBox;
-				}
-				
-				//WORLD STEP DOESNT MAKE SENSE USING IT IN A OBJECT UPDATE LOOP IT SHOULD BE IN WORLD UPDATE
-				
-
-// 				b2World_Step(worldId, timeStep, subStepCount);
-// 				sensorListener();
-// 				contactListener();
-
-
-// 				for (int32_t i = 0; i < 90; ++i) {
-// 					if (B2_IS_NULL(worldId) != 0) {
-// 						std::cerr << "Invalid worldId detected." << std::endl;
-// 						break;
-// 					}
-// 					else {
-// 						try {
-// 							b2World_Step(worldId, timeStep, subStepCount);
-// 							sensorListener();
-// 							contactListener();
-// 						}
-// 						catch (const std::exception& e) {
-// 							std::cerr << "Exception during b2World_Step: " << e.what() << std::endl;
-// 							__debugbreak();
-// 						}
-// 					}
-// 				}
-
-				if (spriteAnimation->tilemapPath != "") {
-
-					if (spriteAnimation->manual.empty() == true)
-					{
-						SDL_Texture* sprite = LoadTexture(spriteAnimation->tilemapPath, renderTarget);
-
-						SDL_QueryTexture(sprite, NULL, NULL, &spriteAnimation->textureWidth, &spriteAnimation->textureHeight);
-
-						spriteAnimation->frameWidth = spriteAnimation->textureWidth / spriteAnimation->tilemapSize.w;
-						spriteAnimation->frameHeight = spriteAnimation->textureHeight / spriteAnimation->tilemapSize.h;
-
-						spriteAnimation->animationRect.w = spriteAnimation->frameWidth;
-						spriteAnimation->animationRect.h = spriteAnimation->frameHeight;
-
-						SDL_Rect spriteRect;
-
-						SDL_Rect spritePos;
-						spritePos.x = getLevel().levelObjects[i]->position.x;
-						spritePos.y = getLevel().levelObjects[i]->position.y;
-						spritePos.w = spriteAnimation->frameWidth;
-						spritePos.h = spriteAnimation->frameHeight;
-
-
-						spriteAnimation->frameTime += deltaTime;
-
-						if (spriteAnimation->frameTime > spriteAnimation->frameDuration) {
-							spriteAnimation->frameTime = 0;
-
-							spriteAnimation->animationRect.x += spriteAnimation->frameWidth;
-
-							if (spriteAnimation->animationRect.x >= spriteAnimation->textureWidth) {
-								spriteAnimation->animationRect.x = 0;
-								spriteAnimation->animationRect.y += spriteAnimation->frameHeight;
-
-								if (spriteAnimation->animationRect.y >= spriteAnimation->textureHeight) {
-									if (spriteAnimation->loop) {
-										spriteAnimation->animationRect.y = 0;
-									}
-									else {
-										spriteAnimation->animationRect.x = spriteAnimation->textureWidth - spriteAnimation->frameWidth;
-										spriteAnimation->animationRect.y = spriteAnimation->textureHeight - spriteAnimation->frameHeight;
-									}
-									getLevel().levelObjects[i]->OnAnimationFinish();
-								}
-							}
-
-						}
-
-						spriteRect.x = spriteAnimation->animationRect.x;
-						spriteRect.y = spriteAnimation->animationRect.y;
-						spriteRect.w = spriteAnimation->animationRect.w;
-						spriteRect.h = spriteAnimation->animationRect.h;
-
-						if (getLevel().levelObjects[i]->visible) {
-
-
-							SDL_Color myColor = { getLevel().levelObjects[i]->modulate.r, getLevel().levelObjects[i]->modulate.g, getLevel().levelObjects[i]->modulate.b,255 };
-
-							SDL_SetTextureColorMod(sprite, myColor.r, myColor.g, myColor.b);
-
-							SDL_RenderCopyEx(renderTarget, sprite, &spriteRect, &spritePos, getLevel().levelObjects[i]->rotation, NULL, SDL_FLIP_NONE);
-						}
-
-						SDL_DestroyTexture(sprite);
-					}
-					else if (spriteAnimation->manual.empty() == false)
-					{
-
-						SDL_Texture* sprite = LoadTexture(spriteAnimation->tilemapPath, renderTarget);
-
-						SDL_QueryTexture(sprite, NULL, NULL, &spriteAnimation->textureWidth, &spriteAnimation->textureHeight);
-
-						spriteAnimation->frameWidth = spriteAnimation->textureWidth / spriteAnimation->tilemapSize.w;
-						spriteAnimation->frameHeight = spriteAnimation->textureHeight / spriteAnimation->tilemapSize.h;
-
-						spriteAnimation->animationRect.w = spriteAnimation->frameWidth;
-						spriteAnimation->animationRect.h = spriteAnimation->frameHeight;
-
-						SDL_Rect spriteRect;
-
-						SDL_Rect spritePos;
-						spritePos.x = getLevel().levelObjects[i]->position.x;
-						spritePos.y = getLevel().levelObjects[i]->position.y;
-						spritePos.w = spriteAnimation->frameWidth;
-						spritePos.h = spriteAnimation->frameHeight;
-
-						spriteAnimation->frameTime += deltaTime;
-
-
-						if (spriteAnimation->frameTime > spriteAnimation->frameDuration)
-						{
-							spriteAnimation->frameTime = 0;
-
-							if (spriteAnimation->spriteIndex < spriteAnimation->manual.size() - 1)
-							{
-								spriteAnimation->spriteIndex++;
-							}
-							else
-							{
-								if (spriteAnimation->loop) {
-									spriteAnimation->spriteIndex = 0;
-								}
-								getLevel().levelObjects[i]->OnAnimationFinish();
-							}
-						}
-
-						if (spriteAnimation->spriteIndex < spriteAnimation->manual.size())
-						{
-							spriteAnimation->animationRect.x = spriteAnimation->manual[spriteAnimation->spriteIndex].coordPosition.x * spriteAnimation->frameWidth;
-							spriteAnimation->animationRect.y = spriteAnimation->manual[spriteAnimation->spriteIndex].coordPosition.y * spriteAnimation->frameHeight;
-						}
-
-
-						spriteRect.x = spriteAnimation->animationRect.x;
-						spriteRect.y = spriteAnimation->animationRect.y;
-						spriteRect.w = spriteAnimation->animationRect.w;
-						spriteRect.h = spriteAnimation->animationRect.h;
-
-						if (getLevel().levelObjects[i]->visible) {
-							SDL_Color myColor = { getLevel().levelObjects[i]->modulate.r, getLevel().levelObjects[i]->modulate.g, getLevel().levelObjects[i]->modulate.b,255 };
-
-							SDL_SetTextureColorMod(sprite, myColor.r, myColor.g, myColor.b);
-							SDL_RenderCopyEx(renderTarget, sprite, &spriteRect, &spritePos, getLevel().levelObjects[i]->rotation, NULL, SDL_FLIP_NONE);
-						}
-						SDL_DestroyTexture(sprite);
-					}
-				}
-
-				
-			}
-
-			b2World_Step(worldId, timeStep, subStepCount);
-			contactListener();
-
-// 			for (int32_t i = 0; i < 60; ++i) {
-// 				if (B2_IS_NULL(worldId) != 0) {
-// 					std::cerr << "Invalid worldId detected." << std::endl;
-// 					break;
-// 				}
-// 				else {
-// 					try {
-// 						b2World_Step(worldId, timeStep, subStepCount);
-// 						contactListener();
-// 						//sensorListener();
-// 					}
-// 					catch (const std::exception& e) {
-// 						std::cerr << "Exception during b2World_Step: " << e.what() << std::endl;
-// 						__debugbreak();
-// 					}
-// 				}
-// 			}
-
-			SDL_RenderPresent(renderTarget);
-
-			while (SDL_PollEvent(&event) != 0) {
-				if (event.type == SDL_QUIT) {
-					isRunning = false;
-				}
-			}
-
-
-			/////////////////////////DEBUG TESTING/////////////////////////
-			//You can use this to debug the player position, i was using this to test if the box2d setup was working 
-			// and it seems to be updating the box2d variables correctly
-			//Debug player position
-			//std::cout << "Position absolute: " << getLevel().levelObjects[2]->position.x << " " << getLevel().levelObjects[2]->position.y << std::endl;
-			//std::cout << "Position box: " << getLevel().levelObjects[2]->bodyDef->position.x << " " << getLevel().levelObjects[2]->bodyDef->position.y << std::endl;
-			//Debug player group
-			//std::cout << "Position: " << static_cast<GameObject*>(getLevel().levelObjects[2]->bodyDef->userData)->objectGroup << std::endl;
-			
-			//Debug enemy position - Always debugs one of the enemies positions. I was using this to test if the box2d setup was working
-			// on new objects created after the game started and it seems to be working correctly, so the problem is related to the sensor itself i think
-			//if (getLevel().levelObjects.size() > 4)
-			//{
-			//	std::cout << "Position: " << getLevel().levelObjects[3]->bodyDef->position.x << " " << getLevel().levelObjects[3]->bodyDef->position.y << std::endl;
-			//}
-
-
-			//Debug collision box size from player its being created with 64 by 64. Its bigger than the other collision that is being detected that has the size of 32x32
-			//std::cout << "Collision Box: " << getLevel().levelObjects[2]->collisionBoxSize.w << " " << getLevel().levelObjects[2]->collisionBoxSize.h << std::endl;
-
-
-}
-
-		SDL_DestroyWindow(window);
-		SDL_DestroyRenderer(renderTarget);
-
-		window = nullptr;
-		windowSurface = nullptr;
-		background = nullptr;
-		renderTarget = nullptr;
-
-		b2DestroyWorld(worldId);
-		worldId = b2_nullWorldId;
-
-		SDL_Quit();
-	}
-
-	void Engine::Initialize(GameWindow windowSettings)
-	{
-		//Set Gravity
+	void Engine::Initialize(GameWindow windowSettings) {
+		// Set Gravity
 		worldDef.gravity = gravity;
-
 
 		windowDisplay = windowSettings;
 		SDL_GameController* controller;
 		int i;
 
-		SDL_Init(SDL_INIT_VIDEO );
+		// Initialize OpenGL
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+		SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
+
+		SDL_Init(SDL_INIT_VIDEO);
 		SDL_InitSubSystem(SDL_INIT_GAMECONTROLLER);
-		
+
 		for (i = 0; i < SDL_NumJoysticks(); ++i) {
 			if (SDL_IsGameController(i)) {
 				char* mapping;
@@ -571,12 +161,262 @@ namespace GameEngine {
 				std::cout << "Index '" << i << "' is not a compatible controller." << std::endl;
 			}
 		}
-		window = SDL_CreateWindow(windowSettings.windowName, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowSettings.windowWidth, windowSettings.windowHeight, SDL_WINDOW_OPENGL);
-		renderTarget = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
+
+		window = SDL_CreateWindow(windowSettings.windowName, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, windowSettings.windowWidth, windowSettings.windowHeight, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
+		if (!window) {
+			std::cerr << "Failed to create window: " << SDL_GetError() << std::endl;
+			return;
+		}
+
+		glContext = SDL_GL_CreateContext(window);
+		if (!glContext) {
+			std::cerr << "Failed to create OpenGL context: " << SDL_GetError() << std::endl;
+			return;
+		}
+
+		if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress)) {
+			std::cerr << "Failed to initialize GLAD" << std::endl;
+			return;
+		}
+
+		SDL_GL_SetSwapInterval(1); // Enable vsync
+
+		glViewport(0, 0, windowSettings.windowWidth, windowSettings.windowHeight);
+		glEnable(GL_BLEND);
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+		// Create shader here
+		shader = new Shader("texture.shader");
 
 		b2World_EnableContinuous(worldId, true);
 
 		Update();
+	}
+
+	void Engine::Update() {
+		int prevTime = 0;
+		int currentTime = 0;
+		bool isRunning = true;
+		SDL_Event event;
+
+		shader->Bind();
+
+		glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(windowDisplay.windowWidth), static_cast<float>(windowDisplay.windowHeight), 0.0f, -1.0f, 1.0f);
+		shader->SetUniformMat4f("projection", projection);
+
+		while (isRunning) {
+			prevTime = currentTime;
+			currentTime = SDL_GetTicks();
+			deltaTime = (currentTime - prevTime) / 1000.0f;
+
+			glClear(GL_COLOR_BUFFER_BIT);
+
+			for (int i = 0; i < getLevel().background.size(); ++i) {
+				if (getLevel().background[i].scrollingDirection == getLevel().background[i].vertical) {
+					getLevel().background[i].scrollRect.h += getLevel().background[i].scrollingSpeed * deltaTime;
+					if (getLevel().background[i].scrollingSpeed > 0)
+						getLevel().background[i].scrollRect.h2 = getLevel().background[i].scrollRect.h - windowDisplay.windowHeight;
+					else if (getLevel().background[i].scrollingSpeed < 0)
+						getLevel().background[i].scrollRect.h2 = getLevel().background[i].scrollRect.h + windowDisplay.windowHeight;
+				}
+				else {
+					getLevel().background[i].scrollRect.w += getLevel().background[i].scrollingSpeed * deltaTime;
+					if (getLevel().background[i].scrollingSpeed > 0)
+						getLevel().background[i].scrollRect.w2 = getLevel().background[i].scrollRect.w - windowDisplay.windowWidth;
+					else if (getLevel().background[i].scrollingSpeed < 0)
+						getLevel().background[i].scrollRect.w2 = getLevel().background[i].scrollRect.w + windowDisplay.windowWidth;
+				}
+			}
+
+			// Render background layers
+			for (int i = 0; i < getLevel().background.size(); ++i) {
+				GLuint backgroundTexture = LoadTexture(getLevel().background[i].background_path);
+
+				glBindTexture(GL_TEXTURE_2D, backgroundTexture);
+
+				// Set up vertex data (and buffer(s)) and configure vertex attributes
+				float vertices[] = {
+					// positions          // texture coords
+					1.0f,  1.0f, 0.0f,   1.0f, 1.0f, // top right
+					1.0f, -1.0f, 0.0f,   1.0f, 0.0f, // bottom right
+					-1.0f, -1.0f, 0.0f,  0.0f, 0.0f, // bottom left
+					-1.0f,  1.0f, 0.0f,  0.0f, 1.0f  // top left 
+				};
+				unsigned int indices[] = {
+					0, 1, 3, // first triangle
+					1, 2, 3  // second triangle
+				};
+
+				unsigned int VBO, VAO, EBO;
+				glGenVertexArrays(1, &VAO);
+				glGenBuffers(1, &VBO);
+				glGenBuffers(1, &EBO);
+
+				glBindVertexArray(VAO);
+
+				glBindBuffer(GL_ARRAY_BUFFER, VBO);
+				glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+				glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+				// position attribute
+				glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+				glEnableVertexAttribArray(0);
+				// texture coord attribute
+				glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+				glEnableVertexAttribArray(1);
+
+				// Render the texture
+				glBindTexture(GL_TEXTURE_2D, backgroundTexture);
+				glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+				glDeleteVertexArrays(1, &VAO);
+				glDeleteBuffers(1, &VBO);
+				glDeleteBuffers(1, &EBO);
+				glDeleteTextures(1, &backgroundTexture);
+			}
+
+			// Delete GameObjects
+			for (int i = getLevel().levelObjects.size() - 1; i >= 0; --i) {
+				if (getLevel().levelObjects[i]->toBeDeleted == true) {
+					getLevel().levelObjects[i]->OnDestroyed();
+
+					if (i > 1) {
+						b2DestroyBody(*getLevel().levelObjects[i]->bodyId);
+						delete getLevel().levelObjects[i]->bodyDef;
+						delete getLevel().levelObjects[i]->bodyId;
+					}
+					else {
+						std::cout << "Spawner delete" << i << std::endl;
+					}
+					delete getLevel().levelObjects[i];
+					getLevel().levelObjects.erase(getLevel().levelObjects.begin() + i);
+				}
+			}
+
+			for (int i = getLevel().levelObjects.size() - 1; i >= 0; --i) {
+				auto obj = getLevel().levelObjects[i];
+				if (obj->bodyId != nullptr) {
+					b2DestroyBody(*obj->bodyId);
+				}
+			}
+
+			// Manage Created Objects
+			for (int i = 0; i < getLevel().levelObjects.size(); ++i) {
+				GameObject* obj = getLevel().levelObjects[i];
+
+				obj->OnUpdate();
+
+				Animation* spriteAnimation = &obj->animation;
+				if (i > 1) {
+					float bodyWidth = getLevel().levelObjects[i]->collisionBoxSize.w;
+					float bodyHeight = getLevel().levelObjects[i]->collisionBoxSize.h;
+					bodyWidth = bodyWidth / 2.0f;
+					bodyHeight = bodyHeight / 2.0f;
+
+					b2BodyDef* bodyDef = new b2BodyDef;
+					*bodyDef = b2DefaultBodyDef();
+					bodyDef->type = b2_dynamicBody;
+					bodyDef->position = { getLevel().levelObjects[i]->position.x, getLevel().levelObjects[i]->position.y };
+					bodyDef->userData = getLevel().levelObjects[i];
+
+					b2BodyId* bodyId = new b2BodyId;
+					*bodyId = b2CreateBody(worldId, bodyDef);
+
+					b2Vec2 bodyCenter{ bodyWidth, bodyHeight };
+					float angle = 4.0f;
+
+					b2Polygon* dynamicBox = new b2Polygon;
+					*dynamicBox = b2MakeOffsetBox(bodyWidth, bodyHeight, bodyCenter, b2MakeRot(angle * b2_pi));
+
+					b2ShapeDef* shapeDef = new b2ShapeDef;
+					*shapeDef = b2DefaultShapeDef();
+					shapeDef->density = 1.0f;
+					shapeDef->friction = 0.3f;
+					shapeDef->userData = getLevel().levelObjects[i];
+					shapeDef->enableContactEvents = true;
+
+					b2ShapeId* shapeId = new b2ShapeId;
+					*shapeId = b2CreatePolygonShape(*bodyId, shapeDef, dynamicBox);
+
+					getLevel().levelObjects[i]->bodyId = bodyId;
+					getLevel().levelObjects[i]->bodyDef = bodyDef;
+					getLevel().levelObjects[i]->shapeId = shapeId;
+					getLevel().levelObjects[i]->shapeDef = shapeDef;
+					getLevel().levelObjects[i]->boxCollision = dynamicBox;
+				}
+
+				if (spriteAnimation->tilemapPath != "") {
+					GLuint spriteTexture = LoadTexture(spriteAnimation->tilemapPath);
+
+					glBindTexture(GL_TEXTURE_2D, spriteTexture);
+
+					// Set up vertex data (and buffer(s)) and configure vertex attributes
+					float vertices[] = {
+						// positions          // texture coords
+						1.0f,  1.0f, 0.0f,   1.0f, 1.0f, // top right
+						1.0f, -1.0f, 0.0f,   1.0f, 0.0f, // bottom right
+						-1.0f, -1.0f, 0.0f,  0.0f, 0.0f, // bottom left
+						-1.0f,  1.0f, 0.0f,  0.0f, 1.0f  // top left 
+					};
+					unsigned int indices[] = {
+						0, 1, 3, // first triangle
+						1, 2, 3  // second triangle
+					};
+
+					unsigned int VBO, VAO, EBO;
+					glGenVertexArrays(1, &VAO);
+					glGenBuffers(1, &VBO);
+					glGenBuffers(1, &EBO);
+
+					glBindVertexArray(VAO);
+
+					glBindBuffer(GL_ARRAY_BUFFER, VBO);
+					glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+					glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+					glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+					// position attribute
+					glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+					glEnableVertexAttribArray(0);
+					// texture coord attribute
+					glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+					glEnableVertexAttribArray(1);
+
+					// Render the texture
+					glBindTexture(GL_TEXTURE_2D, spriteTexture);
+					glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+					glDeleteVertexArrays(1, &VAO);
+					glDeleteBuffers(1, &VBO);
+					glDeleteBuffers(1, &EBO);
+					glDeleteTextures(1, &spriteTexture);
+				}
+			}
+
+			b2World_Step(worldId, timeStep, subStepCount);
+			contactListener();
+
+			SDL_GL_SwapWindow(window);
+
+			while (SDL_PollEvent(&event) != 0) {
+				if (event.type == SDL_QUIT) {
+					isRunning = false;
+				}
+			}
+		}
+
+		SDL_DestroyWindow(window);
+		SDL_GL_DeleteContext(glContext);
+
+		window = nullptr;
+
+		b2DestroyWorld(worldId);
+		worldId = b2_nullWorldId;
+
+		SDL_Quit();
 	}
 
 	void Engine::setLevel(GameLevel level)
@@ -649,18 +489,6 @@ namespace GameEngine {
 			}
 		}
 	}
-
-
-// 	bool Engine::b2OverlapResultFcn(b2ShapeId id) {
-// 		
-// 		GameObject* obj = static_cast<GameObject*>(b2Shape_GetUserData(id));
-// 		if (obj != nullptr && obj->objectGroup)
-// 		{
-// 			return true;
-// 		}
-// 		// continue the query
-// 		return true;
-// 	}
 }
 
 void GameLevel::setLayerSize(int layerSize)
