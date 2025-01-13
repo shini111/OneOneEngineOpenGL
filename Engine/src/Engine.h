@@ -101,6 +101,10 @@ namespace GameEngine {
 		GameLevel& getLevel();
 		void print(std::string printText);
 
+		void Init(const std::string& path);
+
+		void updateActor();
+
 		void Update();
 		void Initialize(GameWindow windowSettings);
 	private:

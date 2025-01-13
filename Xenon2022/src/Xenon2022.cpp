@@ -2,7 +2,6 @@
 #include <random>
 #include <cmath>
 
-// Define M_PI if not defined, to be used in mathematical fuctions if needed
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
@@ -583,13 +582,12 @@ int main()
 
 	GameLevel level;
 
-	LevelBackground backgroundLayer1;
-	backgroundLayer1.background_path = "resources/graphics/galaxy2.bmp";
+	LevelBackground backgroundLayer1 = LevelBackground("resources/graphics/galaxy2.bmp", 2.f, 2.f, 0.f, 0.f);
 	backgroundLayer1.scrollingSpeed = 0;
 
-	LevelBackground backgroundLayer2;
 
-	backgroundLayer2.background_path = "resources/graphics/GAster96.bmp";
+	LevelBackground backgroundLayer2 = LevelBackground("resources/graphics/GAster96.bmp", 2.f, 2.f, 0.f, 0.f);
+
 	backgroundLayer2.scrollingSpeed = -10;
 	backgroundLayer2.scrollingDirection = backgroundLayer2.vertical;
 
@@ -607,9 +605,7 @@ int main()
 	lonerSpawner* spawner2 = new lonerSpawner();
 	engine.getLevel().addObject(spawner2);
 
-
 	rusher* enemy = new rusher(true, false, true);
-
 
 	engine.getLevel().addObject(ship);
 
@@ -619,4 +615,7 @@ int main()
 	engine.getLevel().addObject(enemy);
 
 	engine.Initialize(gameWindow);
+
+	
+
 }
