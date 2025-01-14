@@ -573,6 +573,30 @@ public:
 	}
 };
 
+class SndBackground : public LevelBackground
+{
+public:
+
+	SndBackground(std::string filepath, float sizeX, float sizeY, float posX, float posY)
+		: LevelBackground(filepath, sizeX, sizeY, posX, posY)
+	{}
+
+	void OnUpdate() override
+	{
+		float scrollSpeed = 0.01f;
+		scrollRect.h += scrollSpeed * engine.deltaTime;
+		//std::cout << scrollRect.h << std::endl;
+	}
+};
+
+class FirstBackground : public LevelBackground
+{
+public:
+	FirstBackground(std::string filepath, float sizeX, float sizeY, float posX, float posY)
+		: LevelBackground(filepath, sizeX, sizeY, posX, posY)
+	{}
+};
+
 int main()
 {
 	GameWindow gameWindow;
@@ -582,18 +606,14 @@ int main()
 
 	GameLevel level;
 
-	LevelBackground backgroundLayer1 = LevelBackground("resources/graphics/galaxy2.bmp", 2.f, 2.f, 0.f, 0.f);
-	backgroundLayer1.scrollingSpeed = 0;
+	LevelBackground* backgroundLayer1 = new LevelBackground("resources/graphics/galaxy2.bmp", 2.f, 2.f, 0.f, 0.f);
+	SndBackground* backgroundLayer2 = new SndBackground("resources/graphics/PULife.bmp", 0.4f, 0.2f, 1.f, 0.f);
+	FirstBackground* firstLayer3 = new FirstBackground("resources/graphics/MAster96.bmp", 2.f, 2.f, -0.5f, 0.f);
 
-
-	LevelBackground backgroundLayer2 = LevelBackground("resources/graphics/GAster96.bmp", 2.f, 2.f, 0.f, 0.f);
-
-	backgroundLayer2.scrollingSpeed = -10;
-	backgroundLayer2.scrollingDirection = backgroundLayer2.vertical;
-
-	level.setLayerSize(2);
+	level.setLayerSize(3);
 	level.background[0] = backgroundLayer1;
-	level.background[1] = backgroundLayer2;
+	level.background[1] = firstLayer3;
+	level.background[2] = backgroundLayer2;
 
 	engine.setLevel(level);
 
@@ -615,7 +635,5 @@ int main()
 	engine.getLevel().addObject(enemy);
 
 	engine.Initialize(gameWindow);
-
-	
 
 }

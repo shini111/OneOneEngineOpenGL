@@ -26,6 +26,9 @@ public:
 	{
 	}
 
+	virtual void OnUpdate() {
+	};
+
 	struct{
 		float x;
 		float y;
@@ -55,7 +58,7 @@ class GameLevel
 {
 public:
 	std::vector<GameObject*> levelObjects;
-	std::vector<LevelBackground> background;
+	std::vector<LevelBackground*> background;
 
 	void setLayerSize(int layerSize);
 	void addObject(GameObject* obj);

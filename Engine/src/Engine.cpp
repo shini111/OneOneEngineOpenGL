@@ -343,36 +343,18 @@ namespace GameEngine {
 		int currentTime = 0;
 		bool isRunning = true;
 		SDL_Event event;
+		bool swap = false;
 
 		while (isRunning) {
 			prevTime = currentTime;
 			currentTime = SDL_GetTicks();
 			deltaTime = (currentTime - prevTime) / 1000.0f;
-		
-			//Move background
-			/*for (int i = 0; i < getLevel().background.size(); ++i)
+
+			for (int i = 0; i < getLevel().background.size(); ++i)
 			{
-				if (getLevel().background[i].scrollingDirection == getLevel().background[i].vertical) {
-
-					getLevel().background[i].scrollRect.h += getLevel().background[i].scrollingSpeed * deltaTime;
-
-					if (getLevel().background[i].scrollingSpeed > 0)
-						getLevel().background[i].scrollRect.h2 = getLevel().background[i].scrollRect.h - windowDisplay.windowHeight;
-					else if (getLevel().background[i].scrollingSpeed < 0)
-						getLevel().background[i].scrollRect.h2 = getLevel().background[i].scrollRect.h + windowDisplay.windowHeight;
-				}
-				else {
-
-					getLevel().background[i].scrollRect.w += getLevel().background[i].scrollingSpeed * deltaTime;
-
-					if (getLevel().background[i].scrollingSpeed > 0)
-						getLevel().background[i].scrollRect.w2 = getLevel().background[i].scrollRect.w - windowDisplay.windowWidth;
-					else if (getLevel().background[i].scrollingSpeed < 0)
-						getLevel().background[i].scrollRect.w2 = getLevel().background[i].scrollRect.w + windowDisplay.windowWidth;
-				}
-
+				getLevel().background[i]->OnUpdate();
+				
 			}
-			SDL_RenderClear(renderTarget);*/
 
 
 			glClearColor(0.0f, 1.0f, 1.0f, 1.0f); // Cyan Blue
@@ -380,26 +362,28 @@ namespace GameEngine {
 			glClear(GL_COLOR_BUFFER_BIT);
 
 			//Multiple background layers
-			for (int i = 0; i < getLevel().background.size(); ++i)
+			//for (auto i = getLevel().background.rbegin(); i != getLevel().background.rend(); ++i)
+			for (auto i = getLevel().background.begin(); i != getLevel().background.end(); ++i)
 			{
-				if (!getLevel().background[i].isInit)
+ 					
+				if (!(*i)->isInit)
 				{
 					std::cout << "shader program is null\n" << std::endl;
 
-					glGenBuffers(1, &getLevel().background[i].m_vbo); // Generate 1 buffer
+					glGenBuffers(1, &(*i)->m_vbo); // Generate 1 buffer
 
-					glGenBuffers(1, &getLevel().background[i].m_ebo);
+					glGenBuffers(1, &(*i)->m_ebo);
 
-					glGenVertexArrays(1, &getLevel().background[i].m_vao);
+					glGenVertexArrays(1, &(*i)->m_vao);
 
 					// 1. bind Vertex Array Object
-					glBindVertexArray(getLevel().background[i].m_vao);
+					glBindVertexArray((*i)->m_vao);
 
 					// 2. copy our vertices array in a buffer for OpenGL to use
-					glBindBuffer(GL_ARRAY_BUFFER, getLevel().background[i].m_vbo);
+					glBindBuffer(GL_ARRAY_BUFFER, (*i)->m_vbo);
 					glBufferData(GL_ARRAY_BUFFER, sizeof(m_Vertices), m_Vertices, GL_STATIC_DRAW);
 
-					glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, getLevel().background[i].m_ebo);
+					glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, (*i)->m_ebo);
 					glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(m_Indices), m_Indices, GL_STATIC_DRAW);
 
 					// Vertex Shader
@@ -463,11 +447,11 @@ namespace GameEngine {
 						//std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
 					}
 
-					getLevel().background[i].m_ShaderProgram = glCreateProgram();
+					(*i)->m_ShaderProgram = glCreateProgram();
 
-					glAttachShader(getLevel().background[i].m_ShaderProgram, vertexShader);
-					glAttachShader(getLevel().background[i].m_ShaderProgram, fragmentShader);
-					glLinkProgram(getLevel().background[i].m_ShaderProgram);
+					glAttachShader((*i)->m_ShaderProgram, vertexShader);
+					glAttachShader((*i)->m_ShaderProgram, fragmentShader);
+					glLinkProgram((*i)->m_ShaderProgram);
 
 					glDeleteShader(vertexShader);
 					glDeleteShader(fragmentShader);
@@ -479,20 +463,20 @@ namespace GameEngine {
 					}
 
 					// 3. then set our vertex attributes pointers
-					GLint posAttrib = glGetAttribLocation(getLevel().background[i].m_ShaderProgram, "position");
+					GLint posAttrib = glGetAttribLocation((*i)->m_ShaderProgram, "position");
 					glEnableVertexAttribArray(posAttrib);
 					glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 
-					GLint colorAttrib = glGetAttribLocation(getLevel().background[i].m_ShaderProgram, "color");
+					GLint colorAttrib = glGetAttribLocation((*i)->m_ShaderProgram, "color");
 					glEnableVertexAttribArray(colorAttrib);
 					glVertexAttribPointer(colorAttrib, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
 
-					GLint texCoordAttrib = glGetAttribLocation(getLevel().background[i].m_ShaderProgram, "texCoord");
+					GLint texCoordAttrib = glGetAttribLocation((*i)->m_ShaderProgram, "texCoord");
 					glEnableVertexAttribArray(texCoordAttrib);
 					glVertexAttribPointer(texCoordAttrib, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 
-					glGenTextures(1, &getLevel().background[i].m_Texture);
-					glBindTexture(GL_TEXTURE_2D, getLevel().background[i].m_Texture);
+					glGenTextures(1, &(*i)->m_Texture);
+					glBindTexture(GL_TEXTURE_2D, (*i)->m_Texture);
 
 
 					// set the texture wrapping/filtering options (on the currently bound texture object)
@@ -503,10 +487,8 @@ namespace GameEngine {
 
 					stbi_set_flip_vertically_on_load(true);
 
-					std::cout << getLevel().background[i].background_path << std::endl;
-
 					int width, height, nrChannels;
-					unsigned char* data = stbi_load(getLevel().background[i].background_path.c_str(), &width, &height, &nrChannels, 0);
+					unsigned char* data = stbi_load((*i)->background_path.c_str(), &width, &height, &nrChannels, 0);
 					if (data)
 					{
 						glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
@@ -518,78 +500,41 @@ namespace GameEngine {
 					}
 					stbi_image_free(data);
 
-					glUseProgram(getLevel().background[i].m_ShaderProgram);
+					glUseProgram((*i)->m_ShaderProgram);
 
 					GLuint textureLocation;
 
-					textureLocation = glGetUniformLocation(getLevel().background[i].m_ShaderProgram, "ourTexture");
+					textureLocation = glGetUniformLocation((*i)->m_ShaderProgram, "ourTexture");
 
 					glUniform1i(textureLocation, 0);
 
-					getLevel().background[i].isInit = true;
+					(*i)->isInit = true;
+
 				}
-
-
-				if(getLevel().background[i].isInit)
+				
+				if ((*i)->isInit)
 				{
-					std::cout << getLevel().background[i].size.x << std::endl;
-					std::cout << getLevel().background[i].size.y << std::endl;
+					glUseProgram((*i)->m_ShaderProgram);
 
 					glm::mat4 model = glm::mat4(1.0f); // Identity matrix
-					model = glm::translate(model, glm::vec3(getLevel().background[i].scrollRect.w, getLevel().background[i].scrollRect.h, 1.0f)); // Apply translation
-					model = glm::scale(model, glm::vec3(getLevel().background[i].size.x, getLevel().background[i].size.y, 1.0f)); // Apply scaling
+					model = glm::translate(model, glm::vec3((*i)->scrollRect.w, (*i)->scrollRect.h, 1.0f)); // Apply translation
+					model = glm::scale(model, glm::vec3((*i)->size.x, (*i)->size.y, 1.0f)); // Apply scaling
 
 					// Pass the model matrix to the shader
-					GLuint modelLoc = glGetUniformLocation(getLevel().background[i].m_ShaderProgram, "model");
+					GLuint modelLoc = glGetUniformLocation((*i)->m_ShaderProgram, "model");
 					glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
 
-					glUseProgram(getLevel().background[i].m_ShaderProgram);
-					glBindVertexArray(getLevel().background[i].m_vao);
+
+					glBindVertexArray((*i)->m_vao);
 
 					glActiveTexture(GL_TEXTURE0);
-					glBindTexture(GL_TEXTURE_2D, getLevel().background[i].m_Texture);
+					glBindTexture(GL_TEXTURE_2D, (*i)->m_Texture);
 
 					glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 				}
 
-				SDL_Rect scrollRect;
-				SDL_Rect scrollPosition;
-				SDL_Rect scrollPosition2;
-
-				scrollRect.x = 0;
-				scrollRect.y = 0;
-
-				//SDL_QueryTexture(background, NULL, NULL, &scrollRect.w, &scrollRect.h);
-
-				scrollPosition.x = getLevel().background[i].scrollRect.w;
-				scrollPosition2.x = getLevel().background[i].scrollRect.w2;
-
-				scrollPosition.y = getLevel().background[i].scrollRect.h;
-				scrollPosition2.y = getLevel().background[i].scrollRect.h2;
-
-				scrollPosition.w = scrollPosition2.w = windowDisplay.windowWidth;
-				scrollPosition.h = scrollPosition2.h = windowDisplay.windowHeight;
-
-
-				if (getLevel().background[i].scrollingDirection == getLevel().background[i].vertical) {
-
-					if (getLevel().background[i].scrollRect.h >= scrollPosition.h || getLevel().background[i].scrollRect.h <= -scrollPosition.h)
-					{
-						getLevel().background[i].scrollRect.h = 0;
-					}
-				}
-				else {
-
-					if (getLevel().background[i].scrollRect.w >= scrollPosition.w || getLevel().background[i].scrollRect.w <= -scrollPosition.w)
-					{
-						getLevel().background[i].scrollRect.w = 0;
-					}
-				}
-
 			}
-
-
 			
 			// Delete GameObjects
 			/*
@@ -831,8 +776,14 @@ namespace GameEngine {
 			}
 
 			SDL_GL_SwapWindow(window);
-
+			if (!swap)
+			{
+				//SDL_GL_SwapWindow(window);
+				swap = true;
+			}
 }
+
+
 
 		SDL_DestroyWindow(window);
 		//SDL_DestroyRenderer(renderTarget);
@@ -901,6 +852,8 @@ namespace GameEngine {
 			std::cout << "Failed to initialize GLAD: " << error << std::endl;
 			SDL_Quit();
 		}
+		//glEnable(GL_DEPTH_TEST);
+
 		SDL_GL_MakeCurrent(window, m_Context);
 
 		b2World_EnableContinuous(worldId, true);
