@@ -14,6 +14,12 @@ public:
 	GameObject(bool visibility, bool isBullet, bool hasSense)
 			: visible(visibility), isBullet(isBullet), hasSense(hasSense) {
 	}
+	unsigned int m_ShaderProgram;
+	unsigned int m_vao;
+	unsigned int m_Texture;
+	unsigned int m_ebo;
+	unsigned int m_vbo;
+	bool isInit = false;
 
 	Animation animation;
 

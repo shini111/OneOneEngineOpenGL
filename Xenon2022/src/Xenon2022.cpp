@@ -180,7 +180,7 @@ public:
 	}
 
 	void OnUpdate() override {
-		position.y -= moveSpeed * engine.deltaTime;
+		position.y += moveSpeed * engine.deltaTime;
 
 		if (position.y > 520) {
 			Destroy();
