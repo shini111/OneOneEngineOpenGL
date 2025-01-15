@@ -103,7 +103,7 @@ public:
 		: GameObject(visibility, isBullet, hasSense) {
 	}
 
-	float moveSpeed = -250.0f;
+	float moveSpeed = 250.0f;
 
 	int firePower = 0;
 	int missileDamage = 1;
@@ -227,7 +227,7 @@ public:
 	}
 
 	void OnUpdate() override {
-		position.y -= moveSpeed * engine.deltaTime;
+		position.y += moveSpeed * engine.deltaTime;
 
 		if (position.y > 500.f) {
 			Destroy();
@@ -395,8 +395,8 @@ public:
 		animationState = 0;
 		objectGroup = "player";
 
-		position.x = 280.0f;
-		position.y = 400.0f;
+		position.x = 320.0f;
+		position.y = 240.0f;
 
 		collisionBoxSize.w = collisionBoxSize.h = 64.0f;
 		rotation = *GetGlobalRotation();
@@ -424,10 +424,10 @@ public:
 				animationState = 0;
 			}
 			if (input.IsGamepadButtonPressed(GamepadButton::DPadUp, false)) {
-				position.y -= movementSpeed * engine.deltaTime;
+				position.y += movementSpeed * engine.deltaTime;
 			}
 			else if (input.IsGamepadButtonPressed(GamepadButton::DPadDown, false)) {
-				position.y += movementSpeed * engine.deltaTime;
+				position.y -= movementSpeed * engine.deltaTime;
 			}
 		}
 
@@ -506,6 +506,7 @@ public:
 			}
 			engine.getLevel().addObject(boom);
 			TakeShipDamage();
+			std::cout << "Ship Damaged by " << contact.objectGroup << std::endl;
 			contact.Destroy();
 		}
 
@@ -513,6 +514,7 @@ public:
 			animation = Animation("resources/graphics/Ship2.bmp", 0.1f, textureDimentions, false, { AnimationCoord(3,0), AnimationCoord(3,1), AnimationCoord(3,2),AnimationCoord(3,0), AnimationCoord(3,1), AnimationCoord(3,2),AnimationCoord(3,0), AnimationCoord(3,1), AnimationCoord(3,2) });
 			animation.spriteIndex = 0;
 			TakeShipDamage();
+			std::cout << "Ship Damaged by " << contact.objectGroup << std::endl;
 		}
 	}
 
@@ -523,8 +525,8 @@ class rusherSpawner : public GameObject
 public:
 	rusherSpawner(bool visibility = false, bool isBullet = false, bool hasSense = false)
 		: GameObject(visibility, isBullet, hasSense) {
+		hasBox2d = false;
 	}
-
 
 	float spawnCooldown = 2.0f;
 	float time = 0.0f;

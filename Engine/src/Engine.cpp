@@ -20,26 +20,6 @@
 
 Input input;
 
-static unsigned char* LoadTexture(std::string filePath) {
-
-	int width, height, nrChannels;
-
-	unsigned char* data = stbi_load(filePath.c_str(), &width, &height, &nrChannels, 0);
-	if (data)
-	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
-	else
-	{
-		std::cout << "Failed to load texture" << std::endl;
-	}
-
-	return data;
-
-	//stbi_image_free(data);
-}
-
 static SDL_Surface* OptimizedSurface(std::string filePath, SDL_Surface* windowSurface) {
 	SDL_Surface* optimizedSurface = nullptr;
 	SDL_Surface* surface = SDL_LoadBMP(filePath.c_str());
@@ -299,7 +279,7 @@ namespace GameEngine {
 		}
 		else
 		{
-			std::cout << "Failed to load texture" << std::endl;
+			std::cout << "Failed to load texture not used"<< std::endl;
 		}
 		stbi_image_free(data);
 
@@ -353,7 +333,7 @@ namespace GameEngine {
 			for (int i = 0; i < getLevel().background.size(); ++i)
 			{
 				getLevel().background[i]->OnUpdate();
-				
+
 			}
 
 
@@ -494,7 +474,7 @@ namespace GameEngine {
 					}
 					else
 					{
-						std::cout << "Failed to load texture" << std::endl;
+						std::cout << "Failed to load texture" << (*i)->background_path << std::endl;
 					}
 					stbi_image_free(data);
 
@@ -509,7 +489,7 @@ namespace GameEngine {
 					(*i)->isInit = true;
 
 				}
-				
+
 				if ((*i)->isInit)
 				{
 					glUseProgram((*i)->m_ShaderProgram);
@@ -532,14 +512,23 @@ namespace GameEngine {
 
 				}
 			}
-			
+
 			// Delete GameObjects
-			/*
+
 			for (int i = getLevel().levelObjects.size() - 1; i >= 0; --i) {
 				if (getLevel().levelObjects[i]->toBeDeleted == true) {
 					getLevel().levelObjects[i]->OnDestroyed();
+					if (getLevel().levelObjects[i]->animation.tilemapPath != "")
+					{
+						glUseProgram(getLevel().levelObjects[i]->m_ShaderProgram);
+						glBindVertexArray(0);
+						glBindBuffer(GL_ARRAY_BUFFER, 0);
+						glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+						glActiveTexture(GL_TEXTURE0);
+						glDeleteProgram(getLevel().levelObjects[i]->m_ShaderProgram);
+					}
 
-					if (i > 1)
+					if (getLevel().levelObjects[i]->bodyId != nullptr)
 					{
 						b2DestroyBody(*getLevel().levelObjects[i]->bodyId);
 						delete getLevel().levelObjects[i]->bodyDef;
@@ -547,14 +536,14 @@ namespace GameEngine {
 					}
 					else
 					{
-						std::cout << "Spawner delete" << i << std::endl;
+						std::cout << "Object with no body" << i << std::endl;
 					}
 					delete getLevel().levelObjects[i];
 					getLevel().levelObjects.erase(getLevel().levelObjects.begin() + i);
 				}
 			}
 
-			for (int i = getLevel().levelObjects.size()-1; i >= 0; --i)
+			for (int i = getLevel().levelObjects.size() - 1; i >= 0; --i)
 			{
 				auto obj = getLevel().levelObjects[i];
 				if (obj->bodyId != nullptr)
@@ -562,41 +551,46 @@ namespace GameEngine {
 					b2DestroyBody(*obj->bodyId);
 				}
 			}
-			*/
 
+			//Create Objects
 			for (auto i = getLevel().levelObjects.begin(); i != getLevel().levelObjects.end(); ++i)
 			{
-				if (!(*i)->isInit)
+				if ((*i)->animation.tilemapPath != "")
 				{
-					float tempVertices[] = {
-						// positions         // colors           // texture coords
-						0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   1.f / ((float)(*i)->animation.tilemapSize.w), 1.f / ((float)(*i)->animation.tilemapSize.h),   // top right
-						0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   1.f / ((float)(*i)->animation.tilemapSize.w), 0.0f,   // bottom right
-					   -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   0.0f,                         0.0f,   // bottom left
-					   -0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   0.0f,                         1.f / ((float)(*i)->animation.tilemapSize.h)    // top left
-					};
+					//Initialize Object
+					if (!(*i)->isInit)
+					{
+						float tempVertices[] = {
+							// positions         // colors           // texture coords
+							0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   1.f / ((float)(*i)->animation.tilemapSize.w), 1.f / ((float)(*i)->animation.tilemapSize.h),   // top right
+							0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   1.f / ((float)(*i)->animation.tilemapSize.w), 0.0f,   // bottom right
+						   -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   0.0f,                         0.0f,   // bottom left
+						   -0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   0.0f,                         1.f / ((float)(*i)->animation.tilemapSize.h)    // top left
+						};
 
-					std::cout << "shader program is null\n" << std::endl;
+						std::copy(std::begin(tempVertices), std::end(tempVertices), std::begin((*i)->m_Vertices));
 
-					glGenBuffers(1, &(*i)->m_vbo); // Generate 1 buffer
+						glGenBuffers(1, &(*i)->m_vbo); // Generate 1 buffer
 
-					glGenBuffers(1, &(*i)->m_ebo);
+						glGenBuffers(1, &(*i)->m_ebo);
 
-					glGenVertexArrays(1, &(*i)->m_vao);
+						glGenVertexArrays(1, &(*i)->m_vao);
 
-					// 1. bind Vertex Array Object
-					glBindVertexArray((*i)->m_vao);
+						// 1. bind Vertex Array Object
+						glBindVertexArray((*i)->m_vao);
 
-					// 2. copy our vertices array in a buffer for OpenGL to use
-					glBindBuffer(GL_ARRAY_BUFFER, (*i)->m_vbo);
-					glBufferData(GL_ARRAY_BUFFER, sizeof(tempVertices), tempVertices, GL_STATIC_DRAW);
+						// 2. copy our vertices array in a buffer for OpenGL to use
+						glBindBuffer(GL_ARRAY_BUFFER, (*i)->m_vbo);
+						glBufferData(GL_ARRAY_BUFFER, sizeof((*i)->m_Vertices), (*i)->m_Vertices, GL_STATIC_DRAW);
 
-					glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, (*i)->m_ebo);
-					glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(m_Indices), m_Indices, GL_STATIC_DRAW);
+						glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, (*i)->m_ebo);
+						glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(m_Indices), m_Indices, GL_STATIC_DRAW);
 
-					// Vertex Shader
 
-					const char* vertexShaderSource = R"glsl(
+
+						// Vertex Shader
+
+						const char* vertexShaderSource = R"glsl(
 				#version 330 core
 
 				in vec3 position;
@@ -616,17 +610,17 @@ namespace GameEngine {
 				}
 			)glsl";
 
-					GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-					glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-					glCompileShader(vertexShader);
+						GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+						glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+						glCompileShader(vertexShader);
 
-					GLint  success;
-					//char infoLog[512];
-					glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+						GLint  success;
+						//char infoLog[512];
+						glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
 
-					// Fragment Shader
+						// Fragment Shader
 
-					const char* fragmentShaderSource = R"glsl(
+						const char* fragmentShaderSource = R"glsl(
 				#version 330 core
 				in vec3 Color;
 				in vec2 TexCoord;
@@ -643,107 +637,154 @@ namespace GameEngine {
 					outColor = colTex1;
 				})glsl";
 
-					GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-					glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-					glCompileShader(fragmentShader);
+						GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+						glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+						glCompileShader(fragmentShader);
 
-					glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+						glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
 
-					if (!success)
+						if (!success)
+						{
+							//glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+							//std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+						}
+
+						(*i)->m_ShaderProgram = glCreateProgram();
+
+						glAttachShader((*i)->m_ShaderProgram, vertexShader);
+						glAttachShader((*i)->m_ShaderProgram, fragmentShader);
+						glLinkProgram((*i)->m_ShaderProgram);
+
+						glDeleteShader(vertexShader);
+						glDeleteShader(fragmentShader);
+
+						glGetProgramiv(m_ShaderProgram, GL_LINK_STATUS, &success);
+						if (!success) {
+							//glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+							//std::cout << "ERROR::SHADER::PROGRAM::COMPILATION_FAILED\n" << infoLog << std::endl;
+						}
+
+						// 3. then set our vertex attributes pointers
+						GLint posAttrib = glGetAttribLocation((*i)->m_ShaderProgram, "position");
+						glEnableVertexAttribArray(posAttrib);
+						glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+
+						GLint colorAttrib = glGetAttribLocation((*i)->m_ShaderProgram, "color");
+						glEnableVertexAttribArray(colorAttrib);
+						glVertexAttribPointer(colorAttrib, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+
+						GLint texCoordAttrib = glGetAttribLocation((*i)->m_ShaderProgram, "texCoord");
+						glEnableVertexAttribArray(texCoordAttrib);
+						glVertexAttribPointer(texCoordAttrib, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+
+						glGenTextures(1, &(*i)->m_Texture);
+						glBindTexture(GL_TEXTURE_2D, (*i)->m_Texture);
+
+
+						// set the texture wrapping/filtering options (on the currently bound texture object)
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+						stbi_set_flip_vertically_on_load(true);
+
+						int width, height, nrChannels;
+						unsigned char* data = stbi_load((*i)->animation.tilemapPath.c_str(), &width, &height, &nrChannels, 0);
+						if (data)
+						{
+							glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+							glGenerateMipmap(GL_TEXTURE_2D);
+						}
+						else
+						{
+							std::cout << "Failed to load object texture" << std::endl;
+							std::cout << (*i)->animation.tilemapPath << std::endl;
+						}
+						stbi_image_free(data);
+
+						glUseProgram((*i)->m_ShaderProgram);
+
+						GLuint textureLocation;
+
+						textureLocation = glGetUniformLocation((*i)->m_ShaderProgram, "ourTexture");
+
+						glUniform1i(textureLocation, 0);
+
+						(*i)->isInit = true;
+
+					}
+
+					//Update Object
+					if ((*i)->isInit)
 					{
-						//glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-						//std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+						Animation* spriteAnimation = &(*i)->animation;
+						glUseProgram((*i)->m_ShaderProgram);
+						if (spriteAnimation->tilemapPath != "") {
+
+							if (spriteAnimation->manual.empty() == true)
+							{
+								// Increment elapsed time
+								(*i)->elapsedTime += deltaTime;
+
+								// Check if enough time has passed to advance to the next frame
+								if ((*i)->elapsedTime >= spriteAnimation->frameDuration) {
+									// Subtract frameTime to preserve leftover time
+									(*i)->elapsedTime -= spriteAnimation->frameDuration;
+
+									// Advance to the next frame in the animation
+									int frameCount = (spriteAnimation->tilemapSize.w * spriteAnimation->tilemapSize.h - 1) - 0 + 1;
+									spriteAnimation->currentFrame = 0 +
+										((spriteAnimation->currentFrame - 0 + 1) % frameCount);
+									
+									std::cout << spriteAnimation->currentFrame << std::endl;
+									// Calculate texture coordinates for the current frame
+									int column = spriteAnimation->currentFrame % spriteAnimation->tilemapSize.w;
+									int row = spriteAnimation->currentFrame / spriteAnimation->tilemapSize.w;
+
+									float texWidth = 1.0f / spriteAnimation->tilemapSize.w;
+									float texHeight = 1.0f / spriteAnimation->tilemapSize.h;
+
+									float x = column * texWidth;
+									float y = 1.0f - ((row + 1) * texHeight);
+
+									// Update texture coordinates
+									(*i)->m_Vertices[6] = x + texWidth; (*i)->m_Vertices[7] = y + texHeight; // Top right
+									(*i)->m_Vertices[14] = x + texWidth; (*i)->m_Vertices[15] = y;           // Bottom right
+									(*i)->m_Vertices[22] = x;            (*i)->m_Vertices[23] = y;           // Bottom left
+									(*i)->m_Vertices[30] = x;            (*i)->m_Vertices[31] = y + texHeight; // Top left
+
+									// Update VBO with new texture coordinates
+									glBindBuffer(GL_ARRAY_BUFFER, (*i)->m_vbo);
+									glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * 32, (*i)->m_Vertices);
+								}
+							}
+						}
+
+						
+
+						glm::mat4 model = glm::mat4(1.0f); // Identity matrix
+						model = glm::translate(model, glm::vec3((*i)->position.x / 320.f, (*i)->position.y / 240.f, 1.0f)); // Apply translation
+						model = glm::scale(model, glm::vec3((*i)->collisionBoxSize.w / 250.f, (*i)->collisionBoxSize.h / 250.f, 1.0f)); // Apply scaling
+						//glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(windowDisplay.windowWidth), static_cast<float>(windowDisplay.windowHeight), 0.0f, -2.0f, 2.0f);
+						// Pass the model matrix to the shader
+						GLuint modelLoc = glGetUniformLocation((*i)->m_ShaderProgram, "model");
+						//GLint projectionLoc = glGetUniformLocation((*i)->m_ShaderProgram, "projection");
+						glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+
+						glBindVertexArray((*i)->m_vao);
+
+						glActiveTexture(GL_TEXTURE0);
+						glBindTexture(GL_TEXTURE_2D, (*i)->m_Texture);
+
+						glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+						
+						glUseProgram(0);
 					}
-
-					(*i)->m_ShaderProgram = glCreateProgram();
-
-					glAttachShader((*i)->m_ShaderProgram, vertexShader);
-					glAttachShader((*i)->m_ShaderProgram, fragmentShader);
-					glLinkProgram((*i)->m_ShaderProgram);
-
-					glDeleteShader(vertexShader);
-					glDeleteShader(fragmentShader);
-
-					glGetProgramiv(m_ShaderProgram, GL_LINK_STATUS, &success);
-					if (!success) {
-						//glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-						//std::cout << "ERROR::SHADER::PROGRAM::COMPILATION_FAILED\n" << infoLog << std::endl;
-					}
-
-					// 3. then set our vertex attributes pointers
-					GLint posAttrib = glGetAttribLocation((*i)->m_ShaderProgram, "position");
-					glEnableVertexAttribArray(posAttrib);
-					glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-
-					GLint colorAttrib = glGetAttribLocation((*i)->m_ShaderProgram, "color");
-					glEnableVertexAttribArray(colorAttrib);
-					glVertexAttribPointer(colorAttrib, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-
-					GLint texCoordAttrib = glGetAttribLocation((*i)->m_ShaderProgram, "texCoord");
-					glEnableVertexAttribArray(texCoordAttrib);
-					glVertexAttribPointer(texCoordAttrib, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-
-					glGenTextures(1, &(*i)->m_Texture);
-					glBindTexture(GL_TEXTURE_2D, (*i)->m_Texture);
-
-
-					// set the texture wrapping/filtering options (on the currently bound texture object)
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-					stbi_set_flip_vertically_on_load(true);
-
-					int width, height, nrChannels;
-					unsigned char* data = stbi_load((*i)->animation.tilemapPath.c_str(), &width, &height, &nrChannels, 0);
-					if (data)
-					{
-						glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-						glGenerateMipmap(GL_TEXTURE_2D);
-					}
-					else
-					{
-						std::cout << "Failed to load texture" << std::endl;
-					}
-					stbi_image_free(data);
-
-					glUseProgram((*i)->m_ShaderProgram);
-
-					GLuint textureLocation;
-
-					textureLocation = glGetUniformLocation((*i)->m_ShaderProgram, "ourTexture");
-
-					glUniform1i(textureLocation, 0);
-
-					(*i)->isInit = true;
-
-				}
-
-				if ((*i)->isInit)
-				{
-					glUseProgram((*i)->m_ShaderProgram);
-
-					glm::mat4 model = glm::mat4(1.0f); // Identity matrix
-					model = glm::translate(model, glm::vec3((*i)->position.x/1000.f, (*i)->position.y/1000.f, 1.0f)); // Apply translation
-					model = glm::scale(model, glm::vec3((*i)->collisionBoxSize.w/100.f, (*i)->collisionBoxSize.h / 100.f, 1.0f)); // Apply scaling
-					//glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(windowDisplay.windowWidth), static_cast<float>(windowDisplay.windowHeight), 0.0f, -1.0f, 1.0f);
-					// Pass the model matrix to the shader
-					GLuint modelLoc = glGetUniformLocation((*i)->m_ShaderProgram, "model");
-					//GLint projectionLoc = glGetUniformLocation((*i)->m_ShaderProgram, "projection");
-					glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-					
-
-					glBindVertexArray((*i)->m_vao);
-
-					glActiveTexture(GL_TEXTURE0);
-					glBindTexture(GL_TEXTURE_2D, (*i)->m_Texture);
-
-					glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-
 				}
 			}
-			
+
 			//Manage Created Objects
 			for (int i = 0; i < getLevel().levelObjects.size(); ++i) {
 				GameObject* obj = getLevel().levelObjects[i];
@@ -757,14 +798,14 @@ namespace GameEngine {
 					//This is a just a workaround for now. I will implement a better way to handle this later, because i need to create
 					//a bool variable for objects for the user to want or not a box2d body but right now i dont have time for that.
 
-				if (i > 1)
+				if (getLevel().levelObjects[i]->hasBox2d)
 				{
-					float bodyWidth = getLevel().levelObjects[i]->collisionBoxSize.w;
-					float bodyHeight = getLevel().levelObjects[i]->collisionBoxSize.h;
-					bodyWidth = bodyWidth / 2.0f;
-					bodyHeight = bodyHeight / 2.0f;
+					float bodyWidth;// = getLevel().levelObjects[i]->collisionBoxSize.w;
+					float bodyHeight;// = getLevel().levelObjects[i]->collisionBoxSize.h;
+					bodyWidth = getLevel().levelObjects[i]->collisionBoxSize.w / 2.0f;
+					bodyHeight = getLevel().levelObjects[i]->collisionBoxSize.h / 2.0f;
 
-					
+
 					b2BodyDef* bodyDef = new b2BodyDef;
 					*bodyDef = b2DefaultBodyDef();
 					bodyDef->type = b2_dynamicBody;
@@ -809,171 +850,73 @@ namespace GameEngine {
 					getLevel().levelObjects[i]->shapeDef = shapeDef;
 					getLevel().levelObjects[i]->boxCollision = dynamicBox;
 				}
-				
+
 
 				if (spriteAnimation->tilemapPath != "") {
 
 					if (spriteAnimation->manual.empty() == true)
 					{
-						//unsigned char* sprite = LoadTexture(spriteAnimation->tilemapPath, renderTarget);
+						// Increment elapsed time
+						float elapsedTime = 0.f;
+						elapsedTime += deltaTime;
 
-						//SDL_QueryTexture(sprite, NULL, NULL, &spriteAnimation->textureWidth, &spriteAnimation->textureHeight);
+						// Check if enough time has passed to advance to the next frame
+						if (elapsedTime >= spriteAnimation->frameDuration) {
+							// Subtract frameTime to preserve leftover time
+							elapsedTime -= spriteAnimation->frameDuration;
 
-						spriteAnimation->frameWidth = spriteAnimation->textureWidth / spriteAnimation->tilemapSize.w;
-						spriteAnimation->frameHeight = spriteAnimation->textureHeight / spriteAnimation->tilemapSize.h;
+							// Advance to the next frame in the animation
+							int frameCount = (spriteAnimation->tilemapSize.w * spriteAnimation->tilemapSize.h - 1) - 0 + 1;
+							spriteAnimation->currentFrame = 0 +
+								((spriteAnimation->currentFrame - 0 + 1) % frameCount);
 
-						spriteAnimation->animationRect.w = spriteAnimation->frameWidth;
-						spriteAnimation->animationRect.h = spriteAnimation->frameHeight;
+							// Calculate texture coordinates for the current frame
+							int column = spriteAnimation->currentFrame % spriteAnimation->tilemapSize.w;
+							int row = spriteAnimation->currentFrame / spriteAnimation->tilemapSize.w;
 
-						SDL_Rect spriteRect;
+							float texWidth = 1.0f / spriteAnimation->tilemapSize.w;
+							float texHeight = 1.0f / spriteAnimation->tilemapSize.h;
 
-						SDL_Rect spritePos;
-						spritePos.x = getLevel().levelObjects[i]->position.x;
-						spritePos.y = getLevel().levelObjects[i]->position.y;
-						spritePos.w = spriteAnimation->frameWidth;
-						spritePos.h = spriteAnimation->frameHeight;
+							float x = column * texWidth;
+							float y = 1.0f - ((row + 1) * texHeight);
 
+							// Update texture coordinates
+							m_Vertices[6] = x + texWidth; m_Vertices[7] = y + texHeight; // Top right
+							m_Vertices[14] = x + texWidth; m_Vertices[15] = y;           // Bottom right
+							m_Vertices[22] = x;            m_Vertices[23] = y;           // Bottom left
+							m_Vertices[30] = x;            m_Vertices[31] = y + texHeight; // Top left
 
-						spriteAnimation->frameTime += deltaTime;
-
-						if (spriteAnimation->frameTime > spriteAnimation->frameDuration) {
-							spriteAnimation->frameTime = 0;
-
-							spriteAnimation->animationRect.x += spriteAnimation->frameWidth;
-
-							if (spriteAnimation->animationRect.x >= spriteAnimation->textureWidth) {
-								spriteAnimation->animationRect.x = 0;
-								spriteAnimation->animationRect.y += spriteAnimation->frameHeight;
-
-								if (spriteAnimation->animationRect.y >= spriteAnimation->textureHeight) {
-									if (spriteAnimation->loop) {
-										spriteAnimation->animationRect.y = 0;
-									}
-									else {
-										spriteAnimation->animationRect.x = spriteAnimation->textureWidth - spriteAnimation->frameWidth;
-										spriteAnimation->animationRect.y = spriteAnimation->textureHeight - spriteAnimation->frameHeight;
-									}
-									getLevel().levelObjects[i]->OnAnimationFinish();
-								}
-							}
-
+							// Update VBO with new texture coordinates
+							glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
+							glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * 32, m_Vertices);
 						}
-
-						spriteRect.x = spriteAnimation->animationRect.x;
-						spriteRect.y = spriteAnimation->animationRect.y;
-						spriteRect.w = spriteAnimation->animationRect.w;
-						spriteRect.h = spriteAnimation->animationRect.h;
-
-						if (getLevel().levelObjects[i]->visible) {
-
-
-							SDL_Color myColor = { getLevel().levelObjects[i]->modulate.r, getLevel().levelObjects[i]->modulate.g, getLevel().levelObjects[i]->modulate.b,255 };
-
-							//SDL_SetTextureColorMod(sprite, myColor.r, myColor.g, myColor.b);
-
-							//SDL_RenderCopyEx(renderTarget, sprite, &spriteRect, &spritePos, getLevel().levelObjects[i]->rotation, NULL, SDL_FLIP_NONE);
-						}
-
-						//SDL_DestroyTexture(sprite);
-					}
-					else if (spriteAnimation->manual.empty() == false)
-					{
-
-						//SDL_Texture* sprite = LoadTexture(spriteAnimation->tilemapPath, renderTarget);
-
-						//SDL_QueryTexture(sprite, NULL, NULL, &spriteAnimation->textureWidth, &spriteAnimation->textureHeight);
-
-						spriteAnimation->frameWidth = spriteAnimation->textureWidth / spriteAnimation->tilemapSize.w;
-						spriteAnimation->frameHeight = spriteAnimation->textureHeight / spriteAnimation->tilemapSize.h;
-
-						spriteAnimation->animationRect.w = spriteAnimation->frameWidth;
-						spriteAnimation->animationRect.h = spriteAnimation->frameHeight;
-
-						SDL_Rect spriteRect;
-
-						SDL_Rect spritePos;
-						spritePos.x = getLevel().levelObjects[i]->position.x;
-						spritePos.y = getLevel().levelObjects[i]->position.y;
-						spritePos.w = spriteAnimation->frameWidth;
-						spritePos.h = spriteAnimation->frameHeight;
-
-						spriteAnimation->frameTime += deltaTime;
-
-
-						if (spriteAnimation->frameTime > spriteAnimation->frameDuration)
-						{
-							spriteAnimation->frameTime = 0;
-
-							if (spriteAnimation->spriteIndex < spriteAnimation->manual.size() - 1)
-							{
-								spriteAnimation->spriteIndex++;
-							}
-							else
-							{
-								if (spriteAnimation->loop) {
-									spriteAnimation->spriteIndex = 0;
-								}
-								getLevel().levelObjects[i]->OnAnimationFinish();
-							}
-						}
-
-						if (spriteAnimation->spriteIndex < spriteAnimation->manual.size())
-						{
-							spriteAnimation->animationRect.x = spriteAnimation->manual[spriteAnimation->spriteIndex].coordPosition.x * spriteAnimation->frameWidth;
-							spriteAnimation->animationRect.y = spriteAnimation->manual[spriteAnimation->spriteIndex].coordPosition.y * spriteAnimation->frameHeight;
-						}
-
-
-						spriteRect.x = spriteAnimation->animationRect.x;
-						spriteRect.y = spriteAnimation->animationRect.y;
-						spriteRect.w = spriteAnimation->animationRect.w;
-						spriteRect.h = spriteAnimation->animationRect.h;
-
-						if (getLevel().levelObjects[i]->visible) {
-							SDL_Color myColor = { getLevel().levelObjects[i]->modulate.r, getLevel().levelObjects[i]->modulate.g, getLevel().levelObjects[i]->modulate.b,255 };
-
-							//SDL_SetTextureColorMod(sprite, myColor.r, myColor.g, myColor.b);
-							//SDL_RenderCopyEx(renderTarget, sprite, &spriteRect, &spritePos, getLevel().levelObjects[i]->rotation, NULL, SDL_FLIP_NONE);
-						}
-						//SDL_DestroyTexture(sprite);
 					}
 				}
+				b2World_Step(worldId, timeStep, subStepCount);
+				contactListener();
 
-				
-			}
-			
-
-			b2World_Step(worldId, timeStep, subStepCount);
-			contactListener();
-
-			while (SDL_PollEvent(&event) != 0) {
-				if (event.type == SDL_QUIT) {
-					isRunning = false;
+				while (SDL_PollEvent(&event) != 0) {
+					if (event.type == SDL_QUIT) {
+						isRunning = false;
+					}
 				}
 			}
 
 			SDL_GL_SwapWindow(window);
-			if (!swap)
-			{
-				//SDL_GL_SwapWindow(window);
-				swap = true;
-			}
-}
+		}
+			SDL_DestroyWindow(window);
+			//SDL_DestroyRenderer(renderTarget);
 
+			window = nullptr;
+			windowSurface = nullptr;
+			background = nullptr;
+			renderTarget = nullptr;
 
+			b2DestroyWorld(worldId);
+			worldId = b2_nullWorldId;
 
-		SDL_DestroyWindow(window);
-		//SDL_DestroyRenderer(renderTarget);
-
-		window = nullptr;
-		windowSurface = nullptr;
-		background = nullptr;
-		renderTarget = nullptr;
-
-		b2DestroyWorld(worldId);
-		worldId = b2_nullWorldId;
-
-		SDL_Quit();
+			SDL_Quit();
+		
 	}
 
 	void Engine::Initialize(GameWindow windowSettings)

@@ -21,6 +21,12 @@ public:
 	unsigned int m_vbo;
 	bool isInit = false;
 
+	float m_Vertices[32];
+	float elapsedTime = 0.f;
+
+	bool hasBox2d = true;
+
+
 	Animation animation;
 
 	struct {

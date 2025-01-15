@@ -34,7 +34,7 @@ public:
 	int textureHeight = 0;
 	int frameWidth = 0;
 	int frameHeight = 0;
-
+	int currentFrame;
 	int spriteIndex = 0;
 
 
