@@ -37,13 +37,13 @@ public:
 	int currentFrame;
 	int spriteIndex = 0;
 
-
+	int targetFrame = 0;
 	float frameTime = 0.0f;
 
 	float frameDuration = 0.1f;
 	bool loop = false;
 
-	std::vector <AnimationCoord> manual;
+	std::vector<int> manual;
 
 	struct
 	{
@@ -61,7 +61,7 @@ public:
 
 	Animation() = default;
 
-	Animation(std::string tilemapParam, float frameDurationParam, int tilemapSizeParam[2], bool loopParam, std::vector <AnimationCoord> manualMode) {
+	Animation(std::string tilemapParam, float frameDurationParam, int tilemapSizeParam[2], bool loopParam, std::vector <int> manualMode) {
 		tilemapPath = tilemapParam;
 		frameDuration = frameDurationParam;
 		tilemapSize.w = tilemapSizeParam[0];

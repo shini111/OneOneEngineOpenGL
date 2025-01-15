@@ -759,6 +759,48 @@ namespace GameEngine {
 									glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * 32, (*i)->m_Vertices);
 								}
 							}
+							if (spriteAnimation->manual.empty() == false)
+							{
+								// Increment elapsed time
+								(*i)->elapsedTime += deltaTime;
+
+								// Check if enough time has passed to advance to the next frame
+								if ((*i)->elapsedTime >= spriteAnimation->frameDuration) {
+									// Subtract frameTime to preserve leftover time
+									(*i)->elapsedTime -= spriteAnimation->frameDuration;
+
+									// Advance to the next frame in the animation
+									spriteAnimation->currentFrame = spriteAnimation->manual[spriteAnimation->targetFrame];
+									if (spriteAnimation->targetFrame < (spriteAnimation->manual.size() - 1))
+									{
+										spriteAnimation->targetFrame++;
+									}
+									else
+									{		
+										spriteAnimation->targetFrame = 0;
+									}
+									std::cout << spriteAnimation->currentFrame << std::endl;
+									// Calculate texture coordinates for the current frame
+									int column = spriteAnimation->currentFrame % spriteAnimation->tilemapSize.w;
+									int row = spriteAnimation->currentFrame / spriteAnimation->tilemapSize.w;
+
+									float texWidth = 1.0f / spriteAnimation->tilemapSize.w;
+									float texHeight = 1.0f / spriteAnimation->tilemapSize.h;
+
+									float x = column * texWidth;
+									float y = 1.0f - ((row + 1) * texHeight);
+
+									// Update texture coordinates
+									(*i)->m_Vertices[6] = x + texWidth; (*i)->m_Vertices[7] = y + texHeight; // Top right
+									(*i)->m_Vertices[14] = x + texWidth; (*i)->m_Vertices[15] = y;           // Bottom right
+									(*i)->m_Vertices[22] = x;            (*i)->m_Vertices[23] = y;           // Bottom left
+									(*i)->m_Vertices[30] = x;            (*i)->m_Vertices[31] = y + texHeight; // Top left
+
+									// Update VBO with new texture coordinates
+									glBindBuffer(GL_ARRAY_BUFFER, (*i)->m_vbo);
+									glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * 32, (*i)->m_Vertices);
+								}
+							}
 						}
 
 						

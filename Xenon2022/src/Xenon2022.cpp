@@ -113,16 +113,16 @@ public:
 
 		switch (firePower) {
 		case 0:
-			animation = Animation("resources/graphics/missile.bmp", 0.1f, textureDimentions, true, { AnimationCoord(0,0),AnimationCoord(1,0) });
+			animation = Animation("resources/graphics/missile.bmp", 0.1f, textureDimentions, true, { 0 ,1});
 			break;
 		case 1:
-			animation = Animation("resources/graphics/missile.bmp", 0.1f, textureDimentions, true, { AnimationCoord(0,1),AnimationCoord(1,1) });
+			animation = Animation("resources/graphics/missile.bmp", 0.1f, textureDimentions, true, {2 ,3});
 			break;
 		case 2:
-			animation = Animation("resources/graphics/missile.bmp", 0.1f, textureDimentions, true, { AnimationCoord(0,2),AnimationCoord(1,2) });
+			animation = Animation("resources/graphics/missile.bmp", 0.1f, textureDimentions, true, {4, 5});
 			break;
 		default:
-			animation = Animation("resources/graphics/missile.bmp", 0.1f, textureDimentions, true, { AnimationCoord(0,0),AnimationCoord(1,0) });
+			animation = Animation("resources/graphics/missile.bmp", 0.1f, textureDimentions, true, {0, 1});
 		}
 
 		collisionBoxSize.w = collisionBoxSize.h = 16.0f;
@@ -435,19 +435,19 @@ public:
 		{
 			currentAnimation = "Right";
 
-			animation = Animation("resources/graphics/Ship1.bmp", 0.1f, textureDimentions, false, { AnimationCoord(4,0),AnimationCoord(5,0),AnimationCoord(6,0) });
+			animation = Animation("resources/graphics/Ship1.bmp", 0.1f, textureDimentions, false, {4,5,6});
 			animation.spriteIndex = 0;
 		}
 		else if (animationState == 2 && currentAnimation != "Left")
 		{
 			currentAnimation = "Left";
-			animation = Animation("resources/graphics/Ship1.bmp", 0.1f, textureDimentions, false, { AnimationCoord(2,0),AnimationCoord(1,0),AnimationCoord(0,0) });
+			animation = Animation("resources/graphics/Ship1.bmp", 0.1f, textureDimentions, false, { 2,1,0 });
 			animation.spriteIndex = 0;
 		}
 		else if (animationState == 0 && currentAnimation != "Idle")
 		{
 			currentAnimation = "Idle";
-			animation = Animation("resources/graphics/Ship1.bmp", 0.1f, textureDimentions, false, { AnimationCoord(3,0) });
+			animation = Animation("resources/graphics/Ship1.bmp", 0.1f, textureDimentions, false, {3});
 			animation.spriteIndex = 0;
 		}
 
@@ -475,9 +475,9 @@ public:
 
 				animation = Animation("resources/graphics/Ship2.bmp", 0.1f, textureDimentions, false,
 					{
-					AnimationCoord(4,0),AnimationCoord(5,0),AnimationCoord(6,0), AnimationCoord(4,0),AnimationCoord(5,0),AnimationCoord(6,0), AnimationCoord(4,0),AnimationCoord(5,0),AnimationCoord(6,0),
-					AnimationCoord(6,1),AnimationCoord(6,1),AnimationCoord(6,1), AnimationCoord(4,1),AnimationCoord(5,1),AnimationCoord(6,1), AnimationCoord(4,1),AnimationCoord(5,1),AnimationCoord(6,1),
-					AnimationCoord(6,2),AnimationCoord(6,2),AnimationCoord(6,2), AnimationCoord(4,2),AnimationCoord(5,2),AnimationCoord(6,2), AnimationCoord(4,2),AnimationCoord(5,2),AnimationCoord(6,2)
+					4,5,6, 4,5,6, 4,5,6,
+					11,12,13, 11,12,13, 11,12,13,
+					18,19,20,18,19,20,18,19,20
 					}
 				);
 				animation.spriteIndex = 0;
@@ -487,9 +487,9 @@ public:
 				currentAnimation = "Down";
 				animation = Animation("resources/graphics/Ship2.bmp", 0.1f, textureDimentions, false,
 					{
-					AnimationCoord(2,0),AnimationCoord(1,0),AnimationCoord(0,0) , AnimationCoord(2,0),AnimationCoord(1,0),AnimationCoord(0,0), AnimationCoord(2,0),AnimationCoord(1,0),AnimationCoord(0,0),
-					AnimationCoord(2,1),AnimationCoord(1,1),AnimationCoord(0,1), AnimationCoord(2,1),AnimationCoord(1,1),AnimationCoord(0,1), AnimationCoord(2,1),AnimationCoord(1,1),AnimationCoord(0,1),
-					AnimationCoord(2,2),AnimationCoord(1,2),AnimationCoord(0,2), AnimationCoord(2,2),AnimationCoord(1,2),AnimationCoord(0,2), AnimationCoord(2,2),AnimationCoord(1,2),AnimationCoord(0,2)
+					0,1,2, 0,1,2,0,1,2,
+					9,8,7, 9,8,7,9,8,7,
+					16,15,14, 16,15,14,16,15,14
 					}
 				);
 				animation.spriteIndex = 0;
@@ -499,7 +499,7 @@ public:
 				currentAnimation = "Idle";
 				animation = Animation("resources/graphics/Ship1.bmp", 0.1f, textureDimentions, false,
 					{
-						AnimationCoord(3,0), AnimationCoord(3,1), AnimationCoord(3,2),AnimationCoord(3,0), AnimationCoord(3,1), AnimationCoord(3,2),AnimationCoord(3,0), AnimationCoord(3,1), AnimationCoord(3,2)
+						3, 10, 17,3, 10, 17,3, 10, 17
 					}
 				);
 				animation.spriteIndex = 0;
@@ -511,7 +511,7 @@ public:
 		}
 
 		if (contact.objectGroup == "enemy") {
-			animation = Animation("resources/graphics/Ship2.bmp", 0.1f, textureDimentions, false, { AnimationCoord(3,0), AnimationCoord(3,1), AnimationCoord(3,2),AnimationCoord(3,0), AnimationCoord(3,1), AnimationCoord(3,2),AnimationCoord(3,0), AnimationCoord(3,1), AnimationCoord(3,2) });
+			animation = Animation("resources/graphics/Ship2.bmp", 0.1f, textureDimentions, false, { 3, 10, 17,3, 10, 17,3, 10, 17 });
 			animation.spriteIndex = 0;
 			TakeShipDamage();
 			std::cout << "Ship Damaged by " << contact.objectGroup << std::endl;
