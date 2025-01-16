@@ -14,6 +14,21 @@ public:
 	GameObject(bool visibility, bool isBullet, bool hasSense)
 			: visible(visibility), isBullet(isBullet), hasSense(hasSense) {
 	}
+
+	~GameObject()
+	{
+		delete bodyId;
+		delete bodyDef;
+		delete shapeId;
+		delete shapeDef;
+		delete boxCollision;
+		
+		bodyId = nullptr;
+		bodyDef = nullptr;
+		shapeId = nullptr;
+		shapeDef = nullptr;
+		boxCollision = nullptr;
+	}
 	unsigned int m_ShaderProgram;
 	unsigned int m_vao;
 	unsigned int m_Texture;

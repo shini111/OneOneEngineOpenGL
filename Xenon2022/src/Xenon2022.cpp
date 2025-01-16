@@ -1,6 +1,7 @@
 #include "Engine.h"
 #include <random>
 #include <cmath>
+#include <algorithm>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -14,6 +15,23 @@ float globalRotation = 0.0f;
 //To use this fuction we just call *GetGlobalRotation() and get the value of the global rotation
 float* GetGlobalRotation() {
 	return &globalRotation;
+}
+
+template <typename T>
+void removeNullPointers(std::vector<T>& vec) {
+	vec.erase(std::remove_if(vec.begin(), vec.end(), [](T ptr) { return ptr == nullptr; }), vec.end());
+}
+
+float getRandomFloat(float min, float max) {
+	static std::default_random_engine engine{ std::random_device{}() };
+	std::uniform_real_distribution<float> distribution(min, max);
+	return distribution(engine);
+}
+
+int getRandomInt(int min, int max) {
+	static std::default_random_engine engine{ std::random_device{}() };
+	std::uniform_real_distribution<float> distribution(min, max);
+	return distribution(engine);
 }
 
 class Enemy : public GameObject {
@@ -95,7 +113,6 @@ public:
 
 };
 
-
 class missile : public GameObject {
 public:
 
@@ -110,10 +127,12 @@ public:
 
 	void OnStart() override {
 		int textureDimentions[2] = { 2,3 };
-
 		switch (firePower) {
 		case 0:
 			animation = Animation("resources/graphics/missile.bmp", 0.1f, textureDimentions, true, { 0 ,1});
+			std::cout << "Tile Map Size " << animation.tilemapSize.h << std::endl;
+			std::cout << "Target Frame " << animation.targetFrame << std::endl;
+			std::cout << "Current Frame " << animation.currentFrame << std::endl;
 			break;
 		case 1:
 			animation = Animation("resources/graphics/missile.bmp", 0.1f, textureDimentions, true, {2 ,3});
@@ -151,8 +170,8 @@ public:
 
 	void OnUpdate() override {
 		position.y += moveSpeed * engine.deltaTime;
-
-		if (position.y < -50) {
+		
+		if (position.y > 250) {
 			Destroy();
 		}
 	}
@@ -165,7 +184,7 @@ public:
 		: Enemy(visibility, isBullet, hasSense) {
 	}
 
-	float moveSpeed = -150.0f;
+	float moveSpeed = 150.0f;
 	void OnStart() override {
 		healthPoints = 2;
 
@@ -180,9 +199,9 @@ public:
 	}
 
 	void OnUpdate() override {
-		position.y += moveSpeed * engine.deltaTime;
+		position.y -= moveSpeed * engine.deltaTime;
 
-		if (position.y > 520) {
+		if (position.y < -300) {
 			Destroy();
 		}
 
@@ -215,7 +234,7 @@ public:
 		: GameObject(visibility, isBullet, hasSense) {
 	}
 
-	float moveSpeed = -250.0f;
+	float moveSpeed = 250.0f;
 
 	void OnStart() override {
 		int textureDimentions[2] = { 8,1 };
@@ -227,9 +246,9 @@ public:
 	}
 
 	void OnUpdate() override {
-		position.y += moveSpeed * engine.deltaTime;
+		position.y -= moveSpeed * engine.deltaTime;
 
-		if (position.y > 500.f) {
+		if (position.y < -280.f) {
 			Destroy();
 		}
 	}
@@ -283,8 +302,8 @@ public:
 
 		if (time > timeCooldown) {
 			enemyProjectile* enemyProj = new enemyProjectile();
-			enemyProj->position.x = position.x + 20;
-			enemyProj->position.y = position.y + 48;
+			enemyProj->position.x = position.x - 10;
+			enemyProj->position.y = position.y - 35;
 			engine.getLevel().addObject(enemyProj);
 			time = 0;
 		}
@@ -293,12 +312,363 @@ public:
 
 		checkDamageFeedback();
 
-		if (position.x > 700) {
+		if (position.x > 360) {
 			Destroy();
 		}
 
 	}
 
+};
+
+class metalAsteroid : public GameObject {
+public:
+
+	metalAsteroid(bool visibility = true, bool isBullet = true, bool hasSense = true)
+		: GameObject(visibility, isBullet, hasSense) {
+	}
+	std::vector<int> asteroidTypes = {32, 64, 96};
+	float moveSpeed = 60.0f;
+	int asteroidSize = asteroidTypes[getRandomInt(0, 3)];
+
+	void OnStart() override {
+
+		int textureDimentions[2] = { 8,2 };
+
+		objectGroup = "enemy";
+
+		switch (asteroidSize) {
+		case 64:
+			textureDimentions[0] = 8;
+			textureDimentions[1] = 3;
+			std::cout << "64" << std::endl;
+			animation = Animation("resources/graphics/MAster64.bmp", 0.1f, textureDimentions, true, {});
+			break;
+		case 96:
+			textureDimentions[0] = 5;
+			textureDimentions[1] = 5;
+			std::cout << "96" << std::endl;
+			animation = Animation("resources/graphics/MAster96.bmp", 0.1f, textureDimentions, true, {});
+			break;
+		default:
+			textureDimentions[0] = 8;
+			textureDimentions[1] = 2;
+			std::cout << "32" << std::endl;
+			animation = Animation("resources/graphics/MAster32.bmp", 0.1f, textureDimentions, true, {});
+		}
+
+		collisionBoxSize.w = collisionBoxSize.h = asteroidSize;
+		rotation = globalRotation;
+	}
+
+	void OnUpdate() override {
+		position.y -= moveSpeed * engine.deltaTime;
+
+		if (position.y < -300) {
+			Destroy();
+
+		}
+
+	}
+
+	void OnCollideEnter(GameObject& contact) override {
+
+		if (contact.objectGroup == "bullet") {
+			contact.Destroy();
+
+		}
+	}
+
+
+};
+
+class stoneAsteroid : public Enemy {
+public:
+	stoneAsteroid(bool visibility = true, bool isBullet = false, bool hasSense = true)
+		: Enemy(visibility, isBullet, hasSense) {
+	}
+
+	struct
+	{
+		float x = 0.0f;
+		float y = 32.0f;
+	}moveSpeed;
+
+	int asteroidSize;
+
+	void OnStart() override {
+
+		int textureDimentions[2];
+
+		objectGroup = "enemy";
+
+		switch (asteroidSize) {
+		case 64:
+			healthPoints = 3;
+
+			textureDimentions[0] = 8;
+			textureDimentions[1] = 3;
+			animation = Animation("resources/graphics/SAster64.bmp", 0.1f, textureDimentions, true, {});
+			break;
+		case 96:
+			healthPoints = 6;
+
+			textureDimentions[0] = 5;
+			textureDimentions[1] = 5;
+			animation = Animation("resources/graphics/SAster96.bmp", 0.1f, textureDimentions, true, {});
+			break;
+		default:
+			healthPoints = 1;
+
+			textureDimentions[0] = 8;
+			textureDimentions[1] = 2;
+			animation = Animation("resources/graphics/SAster32.bmp", 0.1f, textureDimentions, true, {});
+		}
+
+		collisionBoxSize.w = collisionBoxSize.h = asteroidSize;
+		rotation = globalRotation;
+	}
+
+	void createAsteroid(float posX, float posY, float size, float speedX, float speedY) {
+		stoneAsteroid* asteroid = new stoneAsteroid();
+		asteroid->position.x = posX;
+		asteroid->position.y = posY;
+		asteroid->asteroidSize = size;
+		asteroid->moveSpeed.x = speedX;
+		asteroid->moveSpeed.y = speedY;
+		engine.getLevel().addObject(asteroid);
+	}
+
+	void OnDestroyed() override {
+
+
+		switch (asteroidSize) {
+		case 64:
+
+			createAsteroid(position.x, position.y, 32, 32.0f, 32.0f);
+			createAsteroid(position.x, position.y, 32, -32.0f, 32.0f);
+
+			break;
+		case 96:
+
+			createAsteroid(position.x, position.y, 64, 32.0f, 32.0f);
+			createAsteroid(position.x, position.y, 64, -32.0f, 32.0f);
+			createAsteroid(position.x, position.y, 64, 0.0f, 32.0f);
+
+			break;
+		default:
+
+			break;
+		}
+
+	}
+
+	void OnUpdate() override {
+
+		position.x += moveSpeed.x * engine.deltaTime;
+		position.y -= moveSpeed.y * engine.deltaTime;
+
+		if (position.x > 350 || position.x < -350) {
+			Destroy();
+		}
+
+		if (position.y < -300) {
+			Destroy();
+		}
+
+		checkDamageFeedback();
+
+	}
+
+	void OnCollideEnter(GameObject& contact) override {
+
+		if (contact.objectGroup == "bullet") {
+
+			if (missile* missileContact = dynamic_cast<missile*>(&contact)) {
+
+				int missileFirePower = missileContact->getMissileDamage();
+				contact.Destroy();
+				TakeDamage(missileFirePower);
+			}
+
+			explosion* boom = new explosion();
+			boom->position.x = position.x;
+			boom->position.y = position.y;
+			engine.getLevel().addObject(boom);
+
+		}
+	}
+};
+
+class drone : public Enemy {
+public:
+	drone(bool visibility = true, bool isBullet = false, bool hasSense = true)
+		: Enemy(visibility, isBullet, hasSense) {
+	}
+
+	float moveSpeed = 60.0f;
+	float sinValue;
+	int packID = 0;
+
+	void OnStart() override {
+
+		healthPoints = 1;
+
+		int textureDimentions[2] = { 8,2 };
+
+		animation = Animation("resources/graphics/drone.bmp", 0.1f, textureDimentions, true, {});
+		objectGroup = "enemy";
+
+
+	}
+
+	void OnUpdate() override {
+
+		position.y -= moveSpeed * engine.deltaTime;
+
+		
+		position.x = position.x - sinValue;
+
+
+		if (position.y < -280) {
+			Destroy();
+		}
+
+
+		checkDamageFeedback();
+
+	}
+
+	void OnCollideEnter(GameObject& contact) override {
+		if (contact.objectGroup == "bullet") {
+
+			explosion* boom = new explosion();
+			boom->position.x = position.x;
+			boom->position.y = position.y;
+			engine.getLevel().addObject(boom);
+
+			if (missile* missileContact = dynamic_cast<missile*>(&contact)) {
+
+				int missileFirePower = missileContact->getMissileDamage();
+
+				TakeDamage(missileFirePower);
+			}
+
+			contact.Destroy();
+
+		}
+	}
+
+};
+
+class dronePack : public GameObject
+{
+public:
+	dronePack(bool visibility = false, bool isBullet = false, bool hasSense = false)
+		: GameObject(visibility, isBullet, hasSense) {
+	}
+
+	int myDroneNumber = 6;
+	std::vector<drone*> myPeasents;
+	float time = 0.f;
+	float spawnCooldown = 0.2f;
+	float myPackSin = 0.f;
+	float sinOffset = 0.f;
+
+	void OnUpdate() override
+	{
+		sinOffset += 2 * engine.deltaTime;
+		myPackSin = (sin(sinOffset) * 0.1f);
+
+		if (myDroneNumber != 0)
+		{
+			std::cout << "Time to Spawn" << std::endl;
+				time += 1 * engine.deltaTime;
+				if (time > spawnCooldown) 
+				{
+					std::cout << "Spawning drone Number " << myDroneNumber << std::endl;
+					drone* peasent = new drone(true, false, true);
+					myPeasents.push_back(peasent);
+					peasent->position.x = position.x;
+					peasent->position.y = position.y;
+					engine.getLevel().addObject(peasent);
+					time = 0;
+					myDroneNumber--;
+				}
+			
+		}
+
+		removeNullPointers(myPeasents);
+
+		for (int i = 0; i < myPeasents.size(); i++)
+		{
+
+			myPeasents[i]->sinValue = myPackSin;
+
+		}
+		if (myPeasents.empty() && myDroneNumber == 0)
+		{
+			Destroy();
+		}
+
+	}
+
+};
+
+class metalAsteroidSpawner : public GameObject
+{
+public:
+	metalAsteroidSpawner(bool visibility = false, bool isBullet = false, bool hasSense = false)
+		: GameObject(visibility, isBullet, hasSense) {
+	}
+
+	float spawnCooldown = 10.0f;
+	float time = 0.0f;
+
+	void OnStart() override {
+		objectGroup = "MASpwaner";
+	}
+
+	void OnUpdate() override {
+		time += engine.deltaTime;
+		if (time > spawnCooldown) {
+			metalAsteroid* entity = new metalAsteroid(true, false, true);
+
+			entity->position.x = getRandomFloat(-290.f, 290.f);
+			entity->position.y = 300.0f;
+			engine.getLevel().addObject(entity);
+			time = 0;
+		}
+	}
+};
+
+class stoneAsteroidSpawner : public GameObject
+{
+public:
+	stoneAsteroidSpawner(bool visibility = false, bool isBullet = false, bool hasSense = false)
+		: GameObject(visibility, isBullet, hasSense) {
+	}
+
+	float spawnCooldown = 20.0f;
+	float time = 0.0f;
+	std::vector<int> asteroidSizes = { 32, 64, 96 };
+
+
+	void OnStart() override {
+		objectGroup = "SASpwaner";
+	}
+
+	void OnUpdate() override {
+		time += engine.deltaTime;
+		if (time > spawnCooldown) {
+			stoneAsteroid* entity = new stoneAsteroid(true, false, true);
+
+			entity->asteroidSize = asteroidSizes[getRandomInt(0, 3)];
+			entity->position.x = getRandomFloat(-280, 280);
+			entity->position.y = 300.f;
+			engine.getLevel().addObject(entity);
+			time = 0;
+		}
+	}
 };
 
 class ally : public Pawn {
@@ -325,7 +695,7 @@ public:
 	void TakeShipDamage() {
 		if (damageCooldown <= 0)
 		{
-			std::cout << "Ship Damaged" << std::endl;
+			//std::cout << "Ship Damaged" << std::endl;
 			shipHealth -= 1;
 			damageCooldown = damageCooldownDefault;
 		}
@@ -389,14 +759,14 @@ public:
 
 		movementSpeed = 200.0f;
 
-		bulletOffset.x = 24;
-		bulletOffset.y = 0;
+		bulletOffset.x = 0;
+		bulletOffset.y = 24;
 
 		animationState = 0;
 		objectGroup = "player";
 
-		position.x = 320.0f;
-		position.y = 240.0f;
+		position.x = 0.0f;
+		position.y = -100.0f;
 
 		collisionBoxSize.w = collisionBoxSize.h = 64.0f;
 		rotation = *GetGlobalRotation();
@@ -506,7 +876,7 @@ public:
 			}
 			engine.getLevel().addObject(boom);
 			TakeShipDamage();
-			std::cout << "Ship Damaged by " << contact.objectGroup << std::endl;
+			//std::cout << "Ship Damaged by " << contact.objectGroup << std::endl;
 			contact.Destroy();
 		}
 
@@ -514,10 +884,38 @@ public:
 			animation = Animation("resources/graphics/Ship2.bmp", 0.1f, textureDimentions, false, { 3, 10, 17,3, 10, 17,3, 10, 17 });
 			animation.spriteIndex = 0;
 			TakeShipDamage();
-			std::cout << "Ship Damaged by " << contact.objectGroup << std::endl;
+			//std::cout << "Ship Damaged by " << contact.objectGroup << std::endl;
 		}
 	}
 
+};
+
+class droneSpawner : public GameObject
+{
+public:
+	droneSpawner(bool visibility = false, bool isBullet = false, bool hasSense = false)
+		: GameObject(visibility, isBullet, hasSense) {
+		hasBox2d = false;
+	}
+
+	float spawnCooldown = 20.0f;
+	float time = 0.0f;
+
+	void OnStart() override {
+		objectGroup = "RSpwaner";
+	}
+
+	void OnUpdate() override {
+		time += engine.deltaTime;
+		if (time > spawnCooldown) {
+			dronePack* enemy = new dronePack(true, false, true);
+
+			enemy->position.x = getRandomFloat(-200.f, 200.f);
+			enemy->position.y = 300.0f;
+			engine.getLevel().addObject(enemy);
+			time = 0;
+		}
+	}
 };
 
 class rusherSpawner : public GameObject
@@ -540,9 +938,8 @@ public:
 		if (time > spawnCooldown) {
 			rusher* enemy = new rusher(true, false, true);
 
-			enemy->position.x = 400.0f;
-			enemy->position.x = rand() % 540 + 100;
-			enemy->position.y = -100.0f;
+			enemy->position.x = getRandomFloat(-290.f, 290.f);
+			enemy->position.y = 300.0f;
 			engine.getLevel().addObject(enemy);
 			time = 0;
 		}
@@ -567,8 +964,8 @@ public:
 		time += 1 * engine.deltaTime;
 		if (time > spawnCooldown) {
 			loner* enemy = new loner(true, false, true);
-			enemy->position.x = -100.0f;
-			enemy->position.y = rand() % 200 + 40;
+			enemy->position.x = -350.0f;
+			enemy->position.y = getRandomFloat(0.f, 205.f);
 			engine.getLevel().addObject(enemy);
 			time = 0;
 		}
@@ -621,20 +1018,29 @@ int main()
 
 	spaceship* ship = new spaceship();
 
+	
 	rusherSpawner* spawner = new rusherSpawner();
 	engine.getLevel().addObject(spawner);
 
 	lonerSpawner* spawner2 = new lonerSpawner();
 	engine.getLevel().addObject(spawner2);
 
-	rusher* enemy = new rusher(true, false, true);
+	metalAsteroidSpawner* spawner3 = new metalAsteroidSpawner();
+	engine.getLevel().addObject(spawner3);
+	
+	stoneAsteroidSpawner* spawner4 = new stoneAsteroidSpawner();
+	engine.getLevel().addObject(spawner4);
+	
+	//droneSpawner* spawner5 = new droneSpawner();
+	//engine.getLevel().addObject(spawner5);
 
-	engine.getLevel().addObject(ship);
+	dronePack* enemy = new dronePack(true, false, true);
 
-	enemy->position.x = 400.0f;
-	enemy->position.x = rand() % 540 + 100;
-	enemy->position.y = -100.0f;
+	enemy->position.x = getRandomFloat(-200.f, 200.f);
+	enemy->position.y = 300.0f;
 	engine.getLevel().addObject(enemy);
+	
+	engine.getLevel().addObject(ship);
 
 	engine.Initialize(gameWindow);
 

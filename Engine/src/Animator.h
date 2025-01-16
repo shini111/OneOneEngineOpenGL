@@ -27,14 +27,14 @@ public:
 
 
 class Animation {
-public:
+public: 
 
 	std::string tilemapPath = "";
 	int textureWidth = 0;
 	int textureHeight = 0;
 	int frameWidth = 0;
 	int frameHeight = 0;
-	int currentFrame;
+	int currentFrame = 0;
 	int spriteIndex = 0;
 
 	int targetFrame = 0;
