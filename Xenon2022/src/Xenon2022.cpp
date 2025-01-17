@@ -34,6 +34,91 @@ int getRandomInt(int min, int max) {
 	return distribution(engine);
 }
 
+class powerUpMissile : public GameObject {
+public:
+	powerUpMissile(bool visibility = true, bool isBullet = true, bool hasSense = true)
+		: GameObject(visibility, isBullet, hasSense) {
+	}
+
+	float moveSpeed = 30.0f;
+
+
+	void OnStart() override {
+		int textureDimentions[2] = { 4,2 };
+
+		animation = Animation("resources/graphics/PUWeapon.bmp", 0.1f, textureDimentions, true, {});
+		objectGroup = "powerUpMissile";
+		collisionBoxSize.w = 32.0f;
+		collisionBoxSize.h = 32.0f;
+
+		rotation = *GetGlobalRotation();
+
+	}
+
+	void OnUpdate() override {
+		position.y -= moveSpeed * engine.deltaTime;
+
+		if (position.y < -280) {
+			Destroy();
+		}
+	}
+
+};
+
+class powerUpHeal : public GameObject {
+public:
+	powerUpHeal(bool visibility = true, bool isBullet = true, bool hasSense = true)
+		: GameObject(visibility, isBullet, hasSense) {
+	}
+
+	float moveSpeed = 30.0f;
+
+
+	void OnStart() override {
+		int textureDimentions[2] = { 4,2 };
+
+		animation = Animation("resources/graphics/PUShield.bmp", 0.1f, textureDimentions, true, {});
+		objectGroup = "powerUpHeal";
+
+	}
+
+	void OnUpdate() override {
+		position.y -= moveSpeed * engine.deltaTime;
+
+		if (position.y < -280) {
+			Destroy();
+		}
+	}
+
+};
+
+class powerUpCompanion : public GameObject {
+public:
+	powerUpCompanion(bool visibility = true, bool isBullet = true, bool hasSense = true)
+		: GameObject(visibility, isBullet, hasSense) {
+	}
+	float moveSpeed = 30.0f;
+
+
+	void OnStart() override {
+		int textureDimentions[2] = { 4,5 };
+
+		animation = Animation("resources/graphics/clone.bmp", 0.1f, textureDimentions, true, { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15});
+		objectGroup = "powerUpCompanion";
+
+	}
+
+	void OnUpdate() override {
+
+		position.y -= moveSpeed * engine.deltaTime;
+
+		if (position.y < -280) {
+			Destroy();
+		}
+	}
+
+};
+
 class Enemy : public GameObject {
 public:
 	Enemy(bool visibility = true, bool isBullet = false, bool hasSense = false)
@@ -41,6 +126,7 @@ public:
 	}
 
 	int healthPoints = 1;
+	float dropChance = 10.f;
 
 	void showDamageFeedback() {
 		modulate.r = 255;
@@ -73,14 +159,43 @@ public:
 		}
 	}
 
+	void CreatePowerUp(GameObject* powerUp, float posX, float posY)
+	{
+		powerUp->position.x = posX;
+		powerUp->position.y = posY;
+		engine.getLevel().addObject(powerUp);
+
+	}
+
 	void TakeDamage(int paramFirePower) {
 		healthPoints -= paramFirePower;
 
+		if (healthPoints <= 0) 
+		{
+			if (getRandomFloat(0.f, 100.f) >= (100.f - dropChance))
+			{
+				switch (getRandomInt(0, 3))
+				{
+				case 0:
 
+					CreatePowerUp(new powerUpHeal(true, true, true), position.x, position.y);
 
-		if (healthPoints <= 0) {
+					break;
+				case 1:
+
+					CreatePowerUp(new powerUpMissile(true, true, true), position.x, position.y);
+
+					break;
+				case 2:
+
+					CreatePowerUp(new powerUpCompanion(true, true, true), position.x, position.y);
+
+					break;
+				default:
+					break;
+				}
+			}
 			Destroy();
-
 		}
 		else {
 
@@ -95,6 +210,7 @@ private:
 	float damageFeedbackSpeed = 2;
 
 };
+
 class explosion : public GameObject {
 public:
 	explosion(bool visibility = true, bool isBullet = false, bool hasSense = false)
@@ -825,10 +941,45 @@ public:
 		}
 	}
 
+	void HealShip() {
+		int healAmount = 2;
+
+		shipHealth += healAmount;
+
+		if (shipHealth > shipHealthMax) {
+			shipHealth = shipHealthMax;
+		}
+	}
+	void UpgradeFirePower() {
+		if (firePower < 2)
+		{
+			firePower++;
+			std::cout << "Fire Power: " << firePower << std::endl;
+
+		}
+	}
+	void RecruitCompanion()
+	{
+		for (int i = 0; i < 2; i++)
+		{
+			/*if (CompanionListBool[i] == false)
+			{
+				companionList[i]->recruted = true;
+				companionList[i]->SetPosition();
+
+				CompanionListBool[i] = true;
+
+				break;
+			}*/
+		}
+
+	}
 
 	void OnCollideEnter(GameObject& contact) override {
 
 		int textureDimentions[2] = { 7,3 };
+
+		std::cout << "Contacting: " << contact.objectGroup << std::endl;
 
 		if (contact.objectGroup == "enemyBullet") {
 			explosion* boom = new explosion();
@@ -880,6 +1031,22 @@ public:
 			animation.spriteIndex = 0;
 			TakeShipDamage();
 			//std::cout << "Ship Damaged by " << contact.objectGroup << std::endl;
+		}
+
+		if (contact.objectGroup == "powerUpMissile") {
+			UpgradeFirePower();
+			contact.Destroy();
+		}
+
+		if (contact.objectGroup == "powerUpCompanion") {
+			RecruitCompanion();
+			std::cout << "Power UP Companion" << std::endl;
+			contact.Destroy();
+		}
+
+		if (contact.objectGroup == "powerUpHeal") {
+			HealShip();
+			contact.Destroy();
 		}
 	}
 
@@ -1012,8 +1179,8 @@ int main()
 	engine.setLevel(level);
 
 	spaceship* ship = new spaceship();
+	engine.getLevel().addObject(ship);
 
-	
 	rusherSpawner* spawner = new rusherSpawner();
 	engine.getLevel().addObject(spawner);
 
@@ -1029,7 +1196,13 @@ int main()
 	droneSpawner* spawner5 = new droneSpawner();
 	engine.getLevel().addObject(spawner5);
 	
-	engine.getLevel().addObject(ship);
+	powerUpCompanion* p1 = new powerUpCompanion();
+	p1->position.x = 0.f;
+	p1->position.y = 300.f;
+	engine.getLevel().addObject(p1);
+
+
+
 
 	engine.Initialize(gameWindow);
 
