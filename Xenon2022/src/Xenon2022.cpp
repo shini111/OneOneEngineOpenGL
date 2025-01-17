@@ -505,13 +505,18 @@ public:
 		: Enemy(visibility, isBullet, hasSense) {
 	}
 
-	float moveSpeed = 60.0f;
-	float sinValue;
+	float moveSpeed = 100.0f;
+	float phaseOffset;
 	int packID = 0;
+	float elapsedTime = 0.f;
+	float sinValue = 0.f;
+	float aux = 0.f;
 
 	void OnStart() override {
 
 		healthPoints = 1;
+
+		aux = position.x;
 
 		int textureDimentions[2] = { 8,2 };
 
@@ -525,14 +530,13 @@ public:
 
 		position.y -= moveSpeed * engine.deltaTime;
 
-		
-		position.x = position.x - sinValue;
-
+		elapsedTime += engine.deltaTime;
+		sinValue = (sin(4.f * elapsedTime) * 0.6f);
+		position.x = aux + (sin(4.f * elapsedTime) * 40.f);
 
 		if (position.y < -280) {
 			Destroy();
 		}
-
 
 		checkDamageFeedback();
 
@@ -567,44 +571,35 @@ public:
 		: GameObject(visibility, isBullet, hasSense) {
 	}
 
-	int myDroneNumber = 6;
+	int myDroneNumber = 10;
 	std::vector<drone*> myPeasents;
 	float time = 0.f;
-	float spawnCooldown = 0.2f;
-	float myPackSin = 0.f;
-	float sinOffset = 0.f;
+	float spawnCooldown = 0.3f;
+
 
 	void OnUpdate() override
 	{
-		sinOffset += 2 * engine.deltaTime;
-		myPackSin = (sin(sinOffset) * 0.1f);
 
+	
 		if (myDroneNumber != 0)
 		{
-			std::cout << "Time to Spawn" << std::endl;
 				time += 1 * engine.deltaTime;
 				if (time > spawnCooldown) 
 				{
-					std::cout << "Spawning drone Number " << myDroneNumber << std::endl;
 					drone* peasent = new drone(true, false, true);
+					float phaseOffset = myPeasents.size() * 0.2f;
 					myPeasents.push_back(peasent);
-					peasent->position.x = position.x;
+					peasent->position.x = position.x + phaseOffset;
 					peasent->position.y = position.y;
+					peasent->phaseOffset = phaseOffset;
 					engine.getLevel().addObject(peasent);
 					time = 0;
 					myDroneNumber--;
 				}
-			
 		}
 
 		removeNullPointers(myPeasents);
 
-		for (int i = 0; i < myPeasents.size(); i++)
-		{
-
-			myPeasents[i]->sinValue = myPackSin;
-
-		}
 		if (myPeasents.empty() && myDroneNumber == 0)
 		{
 			Destroy();
@@ -898,7 +893,7 @@ public:
 		hasBox2d = false;
 	}
 
-	float spawnCooldown = 20.0f;
+	float spawnCooldown = 10.0f;
 	float time = 0.0f;
 
 	void OnStart() override {
@@ -910,7 +905,7 @@ public:
 		if (time > spawnCooldown) {
 			dronePack* enemy = new dronePack(true, false, true);
 
-			enemy->position.x = getRandomFloat(-200.f, 200.f);
+			enemy->position.x = getRandomFloat(-240.f, 240.f);
 			enemy->position.y = 300.0f;
 			engine.getLevel().addObject(enemy);
 			time = 0;
@@ -1031,14 +1026,8 @@ int main()
 	stoneAsteroidSpawner* spawner4 = new stoneAsteroidSpawner();
 	engine.getLevel().addObject(spawner4);
 	
-	//droneSpawner* spawner5 = new droneSpawner();
-	//engine.getLevel().addObject(spawner5);
-
-	dronePack* enemy = new dronePack(true, false, true);
-
-	enemy->position.x = getRandomFloat(-200.f, 200.f);
-	enemy->position.y = 300.0f;
-	engine.getLevel().addObject(enemy);
+	droneSpawner* spawner5 = new droneSpawner();
+	engine.getLevel().addObject(spawner5);
 	
 	engine.getLevel().addObject(ship);
 
