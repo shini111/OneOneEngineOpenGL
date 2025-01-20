@@ -1254,15 +1254,22 @@ class backgroundAssets : public LevelBackground
 {
 public:
 
-	backgroundAssets(std::string filepath, float sizeX, float sizeY, float posX, float posY, bool tile, int rows, int columns)
-		: LevelBackground(filepath, sizeX, sizeY, posX, posY, tile, rows, columns)
-	{}
+	backgroundAssets(std::string filepath, float sizeX, float sizeY, float posX, float posY, bool tile, int rows, int columns, int numTilesX, int numTilesY, std::vector<int> tileIDs)
+		: LevelBackground(filepath, sizeX, sizeY, posX, posY, tile, rows, columns, numTilesX, numTilesY, tileIDs)
+	{
+		// Initialize tiledVertices with default values
+		std::fill(std::begin(tiledVertices), std::end(tiledVertices), 0.0f);
+	}
 
 	void OnUpdate() override
 	{
 		float scrollSpeed = 0.01f;
-		scrollRect.h += scrollSpeed * engine.deltaTime;
-		//std::cout << scrollRect.h << std::endl;
+		//scrollRect.h += scrollSpeed * engine.deltaTime;
+		// Ensure the scrollRect.h value wraps around to create a continuous scrolling effect
+// 		if (scrollRect.h > 1.0f)
+// 		{
+// 			scrollRect.h -= 1.0f;
+// 		}
 	}
 };
 
@@ -1284,13 +1291,19 @@ int main()
 	GameLevel level;
 
 	LevelBackground* backgroundLayer1 = new LevelBackground("resources/graphics/galaxy2.bmp", 2.f, 2.f, 0.f, 0.f);
-	backgroundAssets* backgroundLayer2 = new backgroundAssets("resources/graphics/Blocks.bmp", 1.f, 1.f, 0.f, 0.f, true, 64, 16);
-	FirstBackground* firstLayer3 = new FirstBackground("resources/graphics/MAster96.bmp", 2.f, 2.f, -0.5f, 0.f);
 
-	level.setLayerSize(3);
-	level.background[0] = backgroundLayer1;
-	level.background[1] = firstLayer3;
-	level.background[2] = backgroundLayer2;
+	// Create a tiled background layer
+	std::vector<int> tileIDs = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
+	backgroundAssets* backgroundLayer2 = new backgroundAssets("resources/graphics/Blocks.bmp", 1.f, 1.f, 0.1f, 0.1f, true, 16, 64, 4, 4, tileIDs);
+
+	std::vector<int> tileIDs2 = { 0 };
+	backgroundAssets* firstLayer3 = new backgroundAssets("resources/graphics/MAster96.bmp", 100.f, 100.f, 0.0f, 0.f, true, 5,5, 1 , 1, tileIDs2);
+
+
+	level.setLayerSize(2);
+	//level.background[0] = backgroundLayer1;
+	level.background[0] = firstLayer3;
+	level.background[1] = backgroundLayer2;
 
 	engine.setLevel(level);
 

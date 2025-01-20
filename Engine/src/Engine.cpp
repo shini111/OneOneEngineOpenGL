@@ -353,24 +353,11 @@ namespace GameEngine {
 				{
 					if (!(*i)->isInit)
 					{
-
 						std::cout << "Initialize tiled background" << std::endl;
-						float tempVertices[] = {
-							// positions         // colors           // texture coords
-							0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   1.f / ((float)(*i)->tileMapSize.columns),  1.f,   // top right
-							0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   1.f / ((float)(*i)->tileMapSize.columns),  1.f - (1.f / ((float)(*i)->tileMapSize.rows)),   // bottom right
-						   -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   0.0f,											1.f - (1.f / ((float)(*i)->tileMapSize.rows)),   // bottom left
-						   -0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   0.0f,											1.f    // top left
-						};
 
-						std::copy(std::begin(tempVertices), std::end(tempVertices), std::begin((*i)->tiledVertices));
-
-						std::cout << "shader program is null\n" << std::endl;
-
+						// Initialize tiled background
 						glGenBuffers(1, &(*i)->m_vbo); // Generate 1 buffer
-
 						glGenBuffers(1, &(*i)->m_ebo);
-
 						glGenVertexArrays(1, &(*i)->m_vao);
 
 						// 1. bind Vertex Array Object
@@ -384,53 +371,43 @@ namespace GameEngine {
 						glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(m_Indices), m_Indices, GL_STATIC_DRAW);
 
 						// Vertex Shader
-
 						const char* vertexShaderSource = R"glsl(
-				#version 330 core
-
-				in vec3 position;
-				in vec3 color;
-				in vec2 texCoord;
-
-				out vec3 Color;
-				out vec2 TexCoord;
-
-				uniform mat4 model;
-
-				void main()
-				{
-					Color = color;
-					TexCoord = texCoord;
-					gl_Position = model * vec4(position, 1.0);
-				}
-			)glsl";
+                    #version 330 core
+                    in vec3 position;
+                    in vec3 color;
+                    in vec2 texCoord;
+                    out vec3 Color;
+                    out vec2 TexCoord;
+                    uniform mat4 model;
+                    void main()
+                    {
+                        Color = color;
+                        TexCoord = texCoord;
+                        gl_Position = model * vec4(position, 1.0);
+                    }
+                )glsl";
 
 						GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
 						glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
 						glCompileShader(vertexShader);
 
-						GLint  success;
-						//char infoLog[512];
+						GLint success;
 						glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
 
 						// Fragment Shader
-
 						const char* fragmentShaderSource = R"glsl(
-				#version 330 core
-				in vec3 Color;
-				in vec2 TexCoord;
-
-				out vec4 outColor;
-
-				uniform sampler2D ourTexture;
-
-				void main()
-				{
-					vec4 colTex1 = texture(ourTexture, TexCoord);
-					if(colTex1 == vec4(1, 0, 1, 1)) discard;
-
-					outColor = colTex1;
-				})glsl";
+                    #version 330 core
+                    in vec3 Color;
+                    in vec2 TexCoord;
+                    out vec4 outColor;
+                    uniform sampler2D ourTexture;
+                    void main()
+                    {
+                        vec4 colTex1 = texture(ourTexture, TexCoord);
+                        if(colTex1 == vec4(1, 0, 1, 1)) discard;
+                        outColor = colTex1;
+                    }
+                )glsl";
 
 						GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 						glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
@@ -438,14 +415,7 @@ namespace GameEngine {
 
 						glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
 
-						if (!success)
-						{
-							//glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-							//std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-						}
-
 						(*i)->m_ShaderProgram = glCreateProgram();
-
 						glAttachShader((*i)->m_ShaderProgram, vertexShader);
 						glAttachShader((*i)->m_ShaderProgram, fragmentShader);
 						glLinkProgram((*i)->m_ShaderProgram);
@@ -454,10 +424,6 @@ namespace GameEngine {
 						glDeleteShader(fragmentShader);
 
 						glGetProgramiv(m_ShaderProgram, GL_LINK_STATUS, &success);
-						if (!success) {
-							//glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-							//std::cout << "ERROR::SHADER::PROGRAM::COMPILATION_FAILED\n" << infoLog << std::endl;
-						}
 
 						// 3. then set our vertex attributes pointers
 						GLint posAttrib = glGetAttribLocation((*i)->m_ShaderProgram, "position");
@@ -474,7 +440,6 @@ namespace GameEngine {
 
 						glGenTextures(1, &(*i)->m_Texture);
 						glBindTexture(GL_TEXTURE_2D, (*i)->m_Texture);
-
 
 						// set the texture wrapping/filtering options (on the currently bound texture object)
 						glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -500,35 +465,62 @@ namespace GameEngine {
 						glUseProgram((*i)->m_ShaderProgram);
 
 						GLuint textureLocation;
-
 						textureLocation = glGetUniformLocation((*i)->m_ShaderProgram, "ourTexture");
-
 						glUniform1i(textureLocation, 0);
 
 						(*i)->isInit = true;
-
 					}
 
 					if ((*i)->isInit)
 					{
 						glUseProgram((*i)->m_ShaderProgram);
 
-						glm::mat4 model = glm::mat4(1.0f); // Identity matrix
-						model = glm::translate(model, glm::vec3((*i)->scrollRect.w, (*i)->scrollRect.h, 1.0f)); // Apply translation
-						model = glm::scale(model, glm::vec3((*i)->size.x, (*i)->size.y, 1.0f)); // Apply scaling
+						for (int y = 0; y < (*i)->numTiles.y; ++y)
+						{
+							for (int x = 0; x < (*i)->numTiles.x; ++x)
+							{
+								int tileIndex = y * (*i)->numTiles.x + x;
+								if (tileIndex >= (*i)->tileIDs.size())
+									continue;
 
-						// Pass the model matrix to the shader
-						GLuint modelLoc = glGetUniformLocation((*i)->m_ShaderProgram, "model");
-						glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+								int tileID = (*i)->tileIDs[tileIndex];
+								int column = tileID % (*i)->tileMapSize.columns;
+								int row = tileID / (*i)->tileMapSize.columns;
 
+								float texWidth = 1.0f / (*i)->tileMapSize.columns;
+								float texHeight = 1.0f / (*i)->tileMapSize.rows;
 
-						glBindVertexArray((*i)->m_vao);
+								float xTexCoord = column * texWidth;
+								float yTexCoord = 1.0f - ((row + 1) * texHeight);
 
-						glActiveTexture(GL_TEXTURE0);
-						glBindTexture(GL_TEXTURE_2D, (*i)->m_Texture);
+								// Update texture coordinates
+								(*i)->tiledVertices[6] = xTexCoord + texWidth;
+								(*i)->tiledVertices[7] = yTexCoord + texHeight; // Top right
+								(*i)->tiledVertices[14] = xTexCoord + texWidth;
+								(*i)->tiledVertices[15] = yTexCoord; // Bottom right
+								(*i)->tiledVertices[22] = xTexCoord;
+								(*i)->tiledVertices[23] = yTexCoord; // Bottom left
+								(*i)->tiledVertices[30] = xTexCoord;
+								(*i)->tiledVertices[31] = yTexCoord + texHeight; // Top left
 
-						glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+								// Update VBO with new texture coordinates
+								glBindBuffer(GL_ARRAY_BUFFER, (*i)->m_vbo);
+								glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof((*i)->tiledVertices), (*i)->tiledVertices);
 
+								glm::mat4 model = glm::mat4(1.0f); // Identity matrix
+								model = glm::translate(model, glm::vec3((*i)->scrollRect.w + x * (*i)->size.x, (*i)->scrollRect.h + y * (*i)->size.y, 1.0f)); // Apply translation
+								model = glm::scale(model, glm::vec3((*i)->size.x, (*i)->size.y, 1.0f)); // Apply scaling
+
+								// Pass the model matrix to the shader
+								GLuint modelLoc = glGetUniformLocation((*i)->m_ShaderProgram, "model");
+								glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+								glBindVertexArray((*i)->m_vao);
+								glActiveTexture(GL_TEXTURE0);
+								glBindTexture(GL_TEXTURE_2D, (*i)->m_Texture);
+								glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+							}
+						}
 					}
 				}
 				
