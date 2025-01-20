@@ -46,7 +46,7 @@ public:
 	void OnStart() override {
 		int textureDimentions[2] = { 4,2 };
 
-		animation = Animation("resources/graphics/PUWeapon.bmp", 0.1f, textureDimentions, true, {});
+		animation = new Animation("resources/graphics/PUWeapon.bmp", 0.1f, textureDimentions, true, {});
 		objectGroup = "powerUpMissile";
 		collisionBoxSize.w = 32.0f;
 		collisionBoxSize.h = 32.0f;
@@ -77,7 +77,7 @@ public:
 	void OnStart() override {
 		int textureDimentions[2] = { 4,2 };
 
-		animation = Animation("resources/graphics/PUShield.bmp", 0.1f, textureDimentions, true, {});
+		animation = new Animation("resources/graphics/PUShield.bmp", 0.1f, textureDimentions, true, {});
 		objectGroup = "powerUpHeal";
 
 	}
@@ -103,7 +103,7 @@ public:
 	void OnStart() override {
 		int textureDimentions[2] = { 4,5 };
 
-		animation = Animation("resources/graphics/clone.bmp", 0.1f, textureDimentions, true, { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15});
+		animation = new Animation("resources/graphics/clone.bmp", 0.1f, textureDimentions, true, { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15});
 		objectGroup = "powerUpCompanion";
 
 	}
@@ -220,7 +220,7 @@ public:
 
 		int textureDimentions[2] = { 5,2 };
 
-		animation = Animation("resources/graphics/explode64.bmp", 0.1f, textureDimentions, false, {});
+		animation = new Animation("resources/graphics/explode64.bmp", 0.1f, textureDimentions, false, {});
 	}
 
 	void OnAnimationFinish() override {
@@ -245,19 +245,17 @@ public:
 		int textureDimentions[2] = { 2,3 };
 		switch (firePower) {
 		case 0:
-			animation = Animation("resources/graphics/missile.bmp", 0.1f, textureDimentions, true, { 0 ,1});
-			std::cout << "Tile Map Size " << animation.tilemapSize.h << std::endl;
-			std::cout << "Target Frame " << animation.targetFrame << std::endl;
-			std::cout << "Current Frame " << animation.currentFrame << std::endl;
+			animation = new Animation("resources/graphics/missile.bmp", 0.1f, textureDimentions, true, { 0 ,1});
 			break;
 		case 1:
-			animation = Animation("resources/graphics/missile.bmp", 0.1f, textureDimentions, true, {2 ,3});
+			animation = new Animation("resources/graphics/missile.bmp", 0.1f, textureDimentions, true, {3,4});
 			break;
 		case 2:
-			animation = Animation("resources/graphics/missile.bmp", 0.1f, textureDimentions, true, {4, 5});
+			animation = new Animation("resources/graphics/missile.bmp", 0.1f, textureDimentions, true, { 6,7 });
 			break;
 		default:
-			animation = Animation("resources/graphics/missile.bmp", 0.1f, textureDimentions, true, {0, 1});
+			animation = new Animation("resources/graphics/missile.bmp", 0.1f, textureDimentions, true, {0, 1});
+			break;
 		}
 
 		collisionBoxSize.w = collisionBoxSize.h = 16.0f;
@@ -306,7 +304,7 @@ public:
 
 		int textureDimentions[2] = { 4,6 };
 
-		animation = Animation("resources/graphics/rusher.bmp", 0.05f, textureDimentions, true, {});
+		animation = new Animation("resources/graphics/rusher.bmp", 0.05f, textureDimentions, true, {});
 		objectGroup = "enemy";
 		collisionBoxSize.w = 48.0f;
 		collisionBoxSize.h = 32.0f;
@@ -355,7 +353,7 @@ public:
 	void OnStart() override {
 		int textureDimentions[2] = { 8,1 };
 
-		animation = Animation("resources/graphics/EnWeap6.bmp", 0.1f, textureDimentions, true, {});
+		animation = new Animation("resources/graphics/EnWeap6.bmp", 0.1f, textureDimentions, true, {});
 		objectGroup = "enemyBullet";
 
 		collisionBoxSize.w = collisionBoxSize.h = 16.0f;
@@ -388,7 +386,7 @@ public:
 
 		int textureDimentions[2] = { 4,4 };
 
-		animation = Animation("resources/graphics/LonerA.bmp", 0.05f, textureDimentions, true, {});
+		animation = new Animation("resources/graphics/LonerA.bmp", 0.05f, textureDimentions, true, {});
 		objectGroup = "enemy";
 
 		collisionBoxSize.w = collisionBoxSize.h = 64.0f;
@@ -456,20 +454,17 @@ public:
 		case 64:
 			textureDimentions[0] = 8;
 			textureDimentions[1] = 3;
-			std::cout << "64" << std::endl;
-			animation = Animation("resources/graphics/MAster64.bmp", 0.1f, textureDimentions, true, {});
+			animation = new Animation("resources/graphics/MAster64.bmp", 0.1f, textureDimentions, true, {});
 			break;
 		case 96:
 			textureDimentions[0] = 5;
 			textureDimentions[1] = 5;
-			std::cout << "96" << std::endl;
-			animation = Animation("resources/graphics/MAster96.bmp", 0.1f, textureDimentions, true, {});
+			animation = new Animation("resources/graphics/MAster96.bmp", 0.1f, textureDimentions, true, {});
 			break;
 		default:
 			textureDimentions[0] = 8;
 			textureDimentions[1] = 2;
-			std::cout << "32" << std::endl;
-			animation = Animation("resources/graphics/MAster32.bmp", 0.1f, textureDimentions, true, {});
+			animation = new Animation("resources/graphics/MAster32.bmp", 0.1f, textureDimentions, true, {});
 		}
 
 		collisionBoxSize.w = collisionBoxSize.h = asteroidSize;
@@ -523,21 +518,21 @@ public:
 
 			textureDimentions[0] = 8;
 			textureDimentions[1] = 3;
-			animation = Animation("resources/graphics/SAster64.bmp", 0.1f, textureDimentions, true, {});
+			animation = new Animation("resources/graphics/SAster64.bmp", 0.1f, textureDimentions, true, {});
 			break;
 		case 96:
 			healthPoints = 6;
 
 			textureDimentions[0] = 5;
 			textureDimentions[1] = 5;
-			animation = Animation("resources/graphics/SAster96.bmp", 0.1f, textureDimentions, true, {});
+			animation = new Animation("resources/graphics/SAster96.bmp", 0.1f, textureDimentions, true, {});
 			break;
 		default:
 			healthPoints = 1;
 
 			textureDimentions[0] = 8;
 			textureDimentions[1] = 2;
-			animation = Animation("resources/graphics/SAster32.bmp", 0.1f, textureDimentions, true, {});
+			animation = new Animation("resources/graphics/SAster32.bmp", 0.1f, textureDimentions, true, {});
 		}
 
 		collisionBoxSize.w = collisionBoxSize.h = asteroidSize;
@@ -636,7 +631,7 @@ public:
 
 		int textureDimentions[2] = { 8,2 };
 
-		animation = Animation("resources/graphics/drone.bmp", 0.1f, textureDimentions, true, {});
+		animation = new Animation("resources/graphics/drone.bmp", 0.1f, textureDimentions, true, {});
 		objectGroup = "enemy";
 
 
@@ -806,7 +801,6 @@ public:
 	void TakeShipDamage() {
 		if (damageCooldown <= 0)
 		{
-			//std::cout << "Ship Damaged" << std::endl;
 			shipHealth -= 1;
 			damageCooldown = damageCooldownDefault;
 		}
@@ -841,6 +835,95 @@ private:
 	float damageCooldown = 0;
 };
 
+class companion : public ally {
+public:
+	companion(bool visibility = true, bool isBullet = false, bool hasSense = false)
+		: ally(visibility, isBullet, hasSense) {
+	}
+
+	int textureDimentions[2] = { 4,5 };
+
+	void OnStart() override {
+
+		shipHealthMax = 3;
+		shipHealth = 3;
+		keyPressed = false;
+		firePower = 0;
+
+		bulletOffset.x = 0;
+		bulletOffset.y = 9;
+
+		
+		animation = new Animation("resources/graphics/clone.bmp", 0.1f, textureDimentions, true, { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15});
+		objectGroup = "companion";
+		collisionBoxSize.w = collisionBoxSize.h = 32.0f;
+		rotation = globalRotation;
+	}
+
+	void HealShip() {
+		int healAmount = 2;
+
+		shipHealth += healAmount;
+
+		if (shipHealth > shipHealthMax) {
+			shipHealth = shipHealthMax;
+		}
+	}
+	void UpgradeFirePower() {
+		if (firePower < 2)
+		{
+			firePower++;
+			std::cout << "Fire Power: " << firePower << std::endl;
+
+		}
+	}
+
+	void OnUpdate() override
+	{
+		ShootCheck();
+		checkDamageCooldown();
+
+		if (shipHealth <= 0) {
+
+			Destroy();
+			isInit = false;
+			animation = new Animation("resources/graphics/clone.bmp", 0.1f, textureDimentions, false, {16,17,18,19});
+		}
+	}
+
+	void OnCollideEnter(GameObject& contact) override 
+	{
+		if (contact.objectGroup == "enemyBullet") {
+			explosion* boom = new explosion();
+			boom->position.x = position.x;
+			boom->position.y = position.y;
+			std::cout << "Companion Taking Damage" << std::endl;
+			isInit = false;
+			animation = new Animation("resources/graphics/clone.bmp", 1.f, textureDimentions, false, {19});
+			engine.getLevel().addObject(boom);
+			TakeShipDamage();
+			contact.Destroy();
+		}
+
+		if (contact.objectGroup == "enemy") {
+			std::cout << "Companion Taking Damage" << std::endl;
+			isInit = false;
+			animation = new Animation("resources/graphics/clone.bmp", 0.1f, textureDimentions, false, {19});
+			TakeShipDamage();
+		}
+
+		if (contact.objectGroup == "powerUpMissile") {
+			UpgradeFirePower();
+			contact.Destroy();
+		}
+
+		if (contact.objectGroup == "powerUpHeal") {
+			HealShip();
+			contact.Destroy();
+		}
+	}
+};
+
 class spaceship : public ally {
 public:
 	spaceship(bool visibility = true, bool isBullet = false, bool hasSense = false)
@@ -854,19 +937,23 @@ public:
 
 	bool isGameOver = false;
 
+	std::vector<float> companionOffset = {65.f, -65.f};
+
 	bool canTakeDamage = true;
 	float damageCooldown = 0;
+	bool onAnimation = false;
 
+	std::vector<companion*> myCompanions;
 
 	void OnStart() override {
 
 		int textureDimentions[2] = { 7,1 };
 
 
-		shipHealthMax = 5;
-		shipHealth = 5;
+		shipHealthMax = 20;
+		shipHealth = 20;
 		keyPressed = false;
-		firePower = 0;
+		firePower = 1;
 
 		movementSpeed = 200.0f;
 
@@ -883,12 +970,27 @@ public:
 		rotation = *GetGlobalRotation();
 	}
 
+	void OnAnimationFinish() override 
+	{
+		onAnimation = false;
+		
+	}
+
 	void OnUpdate() override {
-
-
 
 		if (isGameOver == false)
 		{
+			if (myCompanions.size() > 0)
+			{
+				for (int i = 0; i < myCompanions.size(); i++)
+				{
+					if (myCompanions[i]->shipHealth <= 0)
+					{
+						myCompanions[i]->Destroy();
+						myCompanions.erase(myCompanions.begin() + i);
+					}
+				}
+			}
 
 			ShootCheck();
 			checkDamageCooldown();
@@ -912,32 +1014,48 @@ public:
 			}
 		}
 
-		if (animationState == 1 && currentAnimation != "Right")
+		if (myCompanions.size() > 0)
+		{
+			for (int i = 0; i < myCompanions.size(); i++)
+			{
+				myCompanions[i]->position.x = position.x + companionOffset[i];
+				myCompanions[i]->position.y = position.y;
+			}
+		}
+
+		if (animationState == 1 && currentAnimation != "Right" && onAnimation == false)
 		{
 			currentAnimation = "Right";
-
-			animation = Animation("resources/graphics/Ship1.bmp", 0.1f, textureDimentions, false, {4,5,6});
-			animation.spriteIndex = 0;
+			isInit = false;
+			animation = new Animation("resources/graphics/Ship1.bmp", 0.1f, textureDimentions, false, {4,5,6});
 		}
-		else if (animationState == 2 && currentAnimation != "Left")
+		else if (animationState == 2 && currentAnimation != "Left" && onAnimation == false)
 		{
 			currentAnimation = "Left";
-			animation = Animation("resources/graphics/Ship1.bmp", 0.1f, textureDimentions, false, { 2,1,0 });
-			animation.spriteIndex = 0;
+			isInit = false;
+			animation = new Animation("resources/graphics/Ship1.bmp", 0.1f, textureDimentions, false, { 2,1,0 });
 		}
-		else if (animationState == 0 && currentAnimation != "Idle")
+		else if (animationState == 0 && currentAnimation != "Idle" && onAnimation == false)
 		{
 			currentAnimation = "Idle";
-			animation = Animation("resources/graphics/Ship1.bmp", 0.1f, textureDimentions, false, {3});
-			animation.spriteIndex = 0;
+			isInit = false;
+			animation = new Animation("resources/graphics/Ship1.bmp", 0.1f, textureDimentions, false, {3});
 		}
 
 
 		if (shipHealth <= 0 && isGameOver == false) {
-			isGameOver = true;
 
-			position.x = 1000.0f;
-			position.y = 1000.0f;
+			if (myCompanions.size() > 0)
+			{
+				for (int i = myCompanions.size() - 1; i >= 0; i--)
+				{
+					std::cout << "my Companion index: " << i << std::endl;
+					myCompanions[i]->Destroy();
+					myCompanions.erase(myCompanions.begin() + i);
+				}
+			}
+			isGameOver = true;
+			Destroy();
 		}
 	}
 
@@ -960,27 +1078,20 @@ public:
 	}
 	void RecruitCompanion()
 	{
-		for (int i = 0; i < 2; i++)
+		
+		if (myCompanions.size() < 2)
 		{
-			/*if (CompanionListBool[i] == false)
-			{
-				companionList[i]->recruted = true;
-				companionList[i]->SetPosition();
-
-				CompanionListBool[i] = true;
-
-				break;
-			}*/
+			companion* companion1 = new companion(true, false, true);
+			myCompanions.push_back(companion1);
+			engine.getLevel().addObject(companion1);
 		}
-
 	}
 
 	void OnCollideEnter(GameObject& contact) override {
 
-		int textureDimentions[2] = { 7,3 };
+		int textureDimentions2[2] = { 7,3 };
 
-		std::cout << "Contacting: " << contact.objectGroup << std::endl;
-
+		
 		if (contact.objectGroup == "enemyBullet") {
 			explosion* boom = new explosion();
 			boom->position.x = position.x;
@@ -988,37 +1099,42 @@ public:
 			if (animationState == 1 && currentAnimation != "Right")
 			{
 				currentAnimation = "Up";
-
-				animation = Animation("resources/graphics/Ship2.bmp", 0.1f, textureDimentions, false,
+				isInit = false;
+				onAnimation = true;
+				animation = new Animation("resources/graphics/Ship2.bmp", 0.1f, textureDimentions2, false,
 					{
 					4,5,6, 4,5,6, 4,5,6,
 					11,12,13, 11,12,13, 11,12,13,
 					18,19,20,18,19,20,18,19,20
 					}
 				);
-				animation.spriteIndex = 0;
+
 			}
 			else if (animationState == 2 && currentAnimation != "Left")
 			{
 				currentAnimation = "Down";
-				animation = Animation("resources/graphics/Ship2.bmp", 0.1f, textureDimentions, false,
+				isInit = false;
+				onAnimation = true;
+				animation = new Animation("resources/graphics/Ship2.bmp", 0.1f, textureDimentions2, false,
 					{
 					0,1,2, 0,1,2,0,1,2,
 					9,8,7, 9,8,7,9,8,7,
 					16,15,14, 16,15,14,16,15,14
 					}
 				);
-				animation.spriteIndex = 0;
+
 			}
 			else if (animationState == 0 && currentAnimation != "Idle")
 			{
 				currentAnimation = "Idle";
-				animation = Animation("resources/graphics/Ship1.bmp", 0.1f, textureDimentions, false,
+				isInit = false;
+				onAnimation = true;
+				animation = new Animation("resources/graphics/Ship2.bmp", 0.1f, textureDimentions2, false,
 					{
 						3, 10, 17,3, 10, 17,3, 10, 17
 					}
 				);
-				animation.spriteIndex = 0;
+
 			}
 			engine.getLevel().addObject(boom);
 			TakeShipDamage();
@@ -1027,12 +1143,12 @@ public:
 		}
 
 		if (contact.objectGroup == "enemy") {
-			animation = Animation("resources/graphics/Ship2.bmp", 0.1f, textureDimentions, false, { 3, 10, 17,3, 10, 17,3, 10, 17 });
-			animation.spriteIndex = 0;
+			animation = new Animation("resources/graphics/Ship2.bmp", 0.1f, textureDimentions, false, { 3, 10, 17,3, 10, 17,3, 10, 17 });
+
 			TakeShipDamage();
 			//std::cout << "Ship Damaged by " << contact.objectGroup << std::endl;
 		}
-
+		
 		if (contact.objectGroup == "powerUpMissile") {
 			UpgradeFirePower();
 			contact.Destroy();
@@ -1134,12 +1250,12 @@ public:
 	}
 };
 
-class SndBackground : public LevelBackground
+class backgroundAssets : public LevelBackground
 {
 public:
 
-	SndBackground(std::string filepath, float sizeX, float sizeY, float posX, float posY)
-		: LevelBackground(filepath, sizeX, sizeY, posX, posY)
+	backgroundAssets(std::string filepath, float sizeX, float sizeY, float posX, float posY, bool tile, int rows, int columns)
+		: LevelBackground(filepath, sizeX, sizeY, posX, posY, tile, rows, columns)
 	{}
 
 	void OnUpdate() override
@@ -1168,7 +1284,7 @@ int main()
 	GameLevel level;
 
 	LevelBackground* backgroundLayer1 = new LevelBackground("resources/graphics/galaxy2.bmp", 2.f, 2.f, 0.f, 0.f);
-	SndBackground* backgroundLayer2 = new SndBackground("resources/graphics/PULife.bmp", 0.4f, 0.2f, 1.f, 0.f);
+	backgroundAssets* backgroundLayer2 = new backgroundAssets("resources/graphics/Blocks.bmp", 1.f, 1.f, 0.f, 0.f, true, 64, 16);
 	FirstBackground* firstLayer3 = new FirstBackground("resources/graphics/MAster96.bmp", 2.f, 2.f, -0.5f, 0.f);
 
 	level.setLayerSize(3);
@@ -1180,7 +1296,7 @@ int main()
 
 	spaceship* ship = new spaceship();
 	engine.getLevel().addObject(ship);
-
+	/*
 	rusherSpawner* spawner = new rusherSpawner();
 	engine.getLevel().addObject(spawner);
 
@@ -1198,9 +1314,19 @@ int main()
 	
 	powerUpCompanion* p1 = new powerUpCompanion();
 	p1->position.x = 0.f;
-	p1->position.y = 300.f;
+	p1->position.y = 250;
 	engine.getLevel().addObject(p1);
 
+	powerUpCompanion* p2 = new powerUpCompanion();
+	p2->position.x = -100.f;
+	p2->position.y = 300.f;
+	engine.getLevel().addObject(p2);
+
+	powerUpCompanion* p3 = new powerUpCompanion();
+	p3->position.x = 100.f;
+	p3->position.y = 500.f;
+	engine.getLevel().addObject(p3);
+	*/
 
 
 

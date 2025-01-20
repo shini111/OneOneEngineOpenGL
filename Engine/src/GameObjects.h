@@ -42,7 +42,7 @@ public:
 	bool hasBox2d = true;
 
 
-	Animation animation;
+	Animation* animation;
 
 	struct {
 		float x = 0.0f;
