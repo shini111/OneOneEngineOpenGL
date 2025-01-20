@@ -248,10 +248,10 @@ public:
 			animation = new Animation("resources/graphics/missile.bmp", 0.1f, textureDimentions, true, { 0 ,1});
 			break;
 		case 1:
-			animation = new Animation("resources/graphics/missile.bmp", 0.1f, textureDimentions, true, {3,4});
+			animation = new Animation("resources/graphics/missile.bmp", 0.1f, textureDimentions, true, {2,3});
 			break;
 		case 2:
-			animation = new Animation("resources/graphics/missile.bmp", 0.1f, textureDimentions, true, { 6,7 });
+			animation = new Animation("resources/graphics/missile.bmp", 0.1f, textureDimentions, true, { 4,5 });
 			break;
 		default:
 			animation = new Animation("resources/graphics/missile.bmp", 0.1f, textureDimentions, true, {0, 1});
@@ -1293,17 +1293,18 @@ int main()
 	LevelBackground* backgroundLayer1 = new LevelBackground("resources/graphics/galaxy2.bmp", 2.f, 2.f, 0.f, 0.f);
 
 	// Create a tiled background layer
-	std::vector<int> tileIDs = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 };
-	backgroundAssets* backgroundLayer2 = new backgroundAssets("resources/graphics/Blocks.bmp", 1.f, 1.f, 0.1f, 0.1f, true, 16, 64, 4, 4, tileIDs);
-
 	std::vector<int> tileIDs2 = { 0 };
-	backgroundAssets* firstLayer3 = new backgroundAssets("resources/graphics/MAster96.bmp", 100.f, 100.f, 0.0f, 0.f, true, 5,5, 1 , 1, tileIDs2);
+	std::vector<int> tileIDs = { 400,401,402,403,404,416,417,418,419,420,432,433,434,435,436,448,449,450,451,452,464,465,466,467,468,480,481,482,483,484,496,497,498,499,500 };
+	backgroundAssets* backgroundLayer2 = new backgroundAssets("resources/graphics/Blocks.bmp", 0.2f, 0.2f, 0.f, 0.f, true, 64, 16, 5, 7, tileIDs);
+
+	
+	backgroundAssets* firstLayer3 = new backgroundAssets("resources/graphics/MAster96.bmp", 0.1f, 0.1f, 0.0f, 0.f, false, 5,5, 1 , 1, tileIDs2);
 
 
-	level.setLayerSize(2);
+	level.setLayerSize(1);
 	//level.background[0] = backgroundLayer1;
-	level.background[0] = firstLayer3;
-	level.background[1] = backgroundLayer2;
+	//level.background[0] = firstLayer3;
+	level.background[0] = backgroundLayer2;
 
 	engine.setLevel(level);
 

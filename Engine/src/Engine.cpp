@@ -355,6 +355,16 @@ namespace GameEngine {
 					{
 						std::cout << "Initialize tiled background" << std::endl;
 
+						float tempVertices[] = {
+							// positions         // colors           // texture coords
+							0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   1.f / ((float)(*i)->tileMapSize.columns),  1.f,   // top right
+							0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   1.f / ((float)(*i)->tileMapSize.columns),  1.f - (1.f / ((float)(*i)->tileMapSize.rows)),   // bottom right
+						   -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   0.0f,											1.f - (1.f / ((float)(*i)->tileMapSize.rows)),   // bottom left
+						   -0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   0.0f,											1.f    // top left
+						};
+
+						std::copy(std::begin(tempVertices), std::end(tempVertices), std::begin((*i)->tiledVertices));
+
 						// Initialize tiled background
 						glGenBuffers(1, &(*i)->m_vbo); // Generate 1 buffer
 						glGenBuffers(1, &(*i)->m_ebo);
@@ -477,15 +487,23 @@ namespace GameEngine {
 
 						for (int y = 0; y < (*i)->numTiles.y; ++y)
 						{
+							std::cout << "-----------------" << std::endl;
+
 							for (int x = 0; x < (*i)->numTiles.x; ++x)
 							{
 								int tileIndex = y * (*i)->numTiles.x + x;
+								//std::cout << "Tile Index: " << tileIndex << std::endl;
 								if (tileIndex >= (*i)->tileIDs.size())
 									continue;
 
 								int tileID = (*i)->tileIDs[tileIndex];
+								
 								int column = tileID % (*i)->tileMapSize.columns;
 								int row = tileID / (*i)->tileMapSize.columns;
+
+								std::cout << "Tile ID: " << tileID << std::endl;
+								std::cout << "Columns: " << column << std::endl;
+								std::cout << "Rows: " << row << std::endl;
 
 								float texWidth = 1.0f / (*i)->tileMapSize.columns;
 								float texHeight = 1.0f / (*i)->tileMapSize.rows;
@@ -508,7 +526,7 @@ namespace GameEngine {
 								glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof((*i)->tiledVertices), (*i)->tiledVertices);
 
 								glm::mat4 model = glm::mat4(1.0f); // Identity matrix
-								model = glm::translate(model, glm::vec3((*i)->scrollRect.w + x * (*i)->size.x, (*i)->scrollRect.h + y * (*i)->size.y, 1.0f)); // Apply translation
+								model = glm::translate(model, glm::vec3((*i)->scrollRect.w + x * (*i)->size.x, (*i)->scrollRect.h - y * (*i)->size.y, 1.0f)); // Apply translation
 								model = glm::scale(model, glm::vec3((*i)->size.x, (*i)->size.y, 1.0f)); // Apply scaling
 
 								// Pass the model matrix to the shader
@@ -806,7 +824,7 @@ namespace GameEngine {
 										}
 										// Calculate texture coordinates for the current frame
 										int column = spriteAnimation->currentFrame % spriteAnimation->tilemapSize.w;
-										int row = spriteAnimation->currentFrame / spriteAnimation->tilemapSize.h;
+										int row = spriteAnimation->currentFrame / spriteAnimation->tilemapSize.w;
 
 										float texWidth = 1.0f / spriteAnimation->tilemapSize.w;
 										float texHeight = 1.0f / spriteAnimation->tilemapSize.h;
@@ -833,7 +851,7 @@ namespace GameEngine {
 							glm::mat4 model = glm::mat4(1.0f); // Identity matrix
 							model = glm::translate(model, glm::vec3((*i)->position.x / 320.f, (*i)->position.y / 240.f, 1.0f)); // Apply translation
 							model = glm::scale(model, glm::vec3((*i)->collisionBoxSize.w / 250.f, (*i)->collisionBoxSize.h / 250.f, 1.0f)); // Apply scaling
-							//glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(windowDisplay.windowWidth), static_cast<float>(windowDisplay.windowHeight), 0.0f, -2.0f, 2.0f);
+
 							// Pass the model matrix to the shader
 							GLuint modelLoc = glGetUniformLocation((*i)->m_ShaderProgram, "model");
 							//GLint projectionLoc = glGetUniformLocation((*i)->m_ShaderProgram, "projection");
