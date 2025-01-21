@@ -20,27 +20,211 @@
 
 Input input;
 
-static SDL_Surface* OptimizedSurface(std::string filePath, SDL_Surface* windowSurface) {
-	SDL_Surface* optimizedSurface = nullptr;
-	SDL_Surface* surface = SDL_LoadBMP(filePath.c_str());
+enum CharEnum {
+	SPACEBAR = 0,
+	EXCLAMATION = 1,
+	DOUBLE_QUOTE = 2,
+	HASH = 3,
+	DOLLAR = 4,
+	PERCENT = 5,
+	AMPERSAND = 6,
+	SINGLE_QUOTE = 7,
+	LEFT_PAREN = 8,
+	RIGHT_PAREN = 9,
+	ASTERISK = 10,
+	PLUS = 11,
+	COMMA = 12,
+	MINUS = 13,
+	DOT = 14,
+	SLASH = 15,
+	ZERO = 16,
+	ONE = 17,
+	TWO = 18,
+	THREE = 19,
+	FOUR = 20,
+	FIVE = 21,
+	SIX = 22,
+	SEVEN = 23,
+	EIGHT = 24,
+	NINE = 25,
+	COLON = 26,
+	SEMICOLON = 27,
+	LESS_THAN = 28,
+	EQUALS = 29,
+	GREATER_THAN = 30,
+	QUESTION = 31,
+	AT = 32,
+	A = 33,
+	B = 34,
+	C = 35,
+	D = 36,
+	E = 37,
+	F = 38,
+	G = 39,
+	H = 40,
+	I = 41,
+	J = 42,
+	K = 43,
+	L = 44,
+	M = 45,
+	N = 46,
+	O = 47,
+	P = 48,
+	Q = 49,
+	R = 50,
+	S = 51,
+	T = 52,
+	U = 53,
+	V = 54,
+	W = 55,
+	X = 56,
+	Y = 57,
+	Z = 58,
+	LEFT_BRACKET = 59,
+	BACKSLASH = 60,
+	RIGHT_BRACKET = 61,
+	CARET = 62,
+	UNDERSCORE = 63,
+	BACKTICK = 64,
+	a = 65,
+	b = 66,
+	c = 67,
+	d = 68,
+	e = 69,
+	f = 70,
+	g = 71,
+	h = 72,
+	i = 73,
+	j = 74,
+	k = 75,
+	l = 76,
+	m = 77,
+	n = 78,
+	o = 79,
+	p = 80,
+	q = 81,
+	r = 82,
+	s = 83,
+	t = 84,
+	u = 85,
+	v = 86,
+	w = 87,
+	x = 88,
+	y = 89,
+	z = 90,
+	LEFT_CURLY = 91,
+	PIPE = 92,
+	RIGHT_CURLY = 93,
+};
 
-	if (surface == nullptr) {
-		std::cout << "Error loading image: " << filePath << std::endl;
+std::vector<char> isolateChars(const std::string& str) {
+	std::vector<char> chars;
+	for (char c : str) {
+		chars.push_back(c);
 	}
-	else {
-		optimizedSurface = SDL_ConvertSurface(surface, windowSurface->format, 0);
-		if (optimizedSurface == nullptr) {
-			std::cout << "Error optimizing surface: " << filePath << std::endl;
-		}
-		SDL_FreeSurface(surface);
-		return optimizedSurface;
-	}
-
+	return chars;
 }
 
-SDL_Texture* windowSurface = nullptr;
-unsigned char* background = nullptr;
-SDL_Renderer* renderTarget = nullptr;
+int returnCharEnum(char c) {
+	switch (c) {
+	case ' ': return SPACEBAR; break;
+	case '!': return EXCLAMATION; break;
+	case '"': return DOUBLE_QUOTE; break;
+	case '#': return HASH; break;
+	case '$': return DOLLAR; break;
+	case '%': return PERCENT; break;
+	case '&': return AMPERSAND; break;
+	case '\'': return SINGLE_QUOTE; break;
+	case '(': return LEFT_PAREN; break;
+	case ')': return RIGHT_PAREN; break;
+	case '*': return ASTERISK; break;
+	case '+': return PLUS; break;
+	case ',': return COMMA; break;
+	case '-': return MINUS; break;
+	case '.': return DOT; break;
+	case '/': return SLASH; break;
+	case '0': return ZERO; break;
+	case '1': return ONE; break;
+	case '2': return TWO; break;
+	case '3': return THREE; break;
+	case '4': return FOUR; break;
+	case '5': return FIVE; break;
+	case '6': return SIX; break;
+	case '7': return SEVEN; break;
+	case '8': return EIGHT; break;
+	case '9': return NINE; break;
+	case ':': return COLON; break;
+	case ';': return SEMICOLON; break;
+	case '<': return LESS_THAN; break;
+	case '=': return EQUALS; break;
+	case '>': return GREATER_THAN; break;
+	case '?': return QUESTION; break;
+	case '@': return AT; break;
+	case 'A': return A; break;
+	case 'B': return B; break;
+	case 'C': return C; break;
+	case 'D': return D; break;
+	case 'E': return E; break;
+	case 'F': return F; break;
+	case 'G': return G; break;
+	case 'H': return H; break;
+	case 'I': return I; break;
+	case 'J': return J; break;
+	case 'K': return K; break;
+	case 'L': return L; break;
+	case 'M': return M; break;
+	case 'N': return N; break;
+	case 'O': return O; break;
+	case 'P': return P; break;
+	case 'Q': return Q; break;
+	case 'R': return R; break;
+	case 'S': return S; break;
+	case 'T': return T; break;
+	case 'U': return U; break;
+	case 'V': return V; break;
+	case 'W': return W; break;
+	case 'X': return X; break;
+	case 'Y': return Y; break;
+	case 'Z': return Z; break;
+	case '[': return LEFT_BRACKET; break;
+	case '\\': return BACKSLASH; break;
+	case ']': return RIGHT_BRACKET; break;
+	case '^': return CARET; break;
+	case '_': return UNDERSCORE; break;
+	case '`': return BACKTICK; break;
+	case 'a': return a; break;
+	case 'b': return b; break;
+	case 'c': return c; break;
+	case 'd': return d; break;
+	case 'e': return e; break;
+	case 'f': return f; break;
+	case 'g': return g; break;
+	case 'h': return h; break;
+	case 'i': return i; break;
+	case 'j': return j; break;
+	case 'k': return k; break;
+	case 'l': return l; break;
+	case 'm': return m; break;
+	case 'n': return n; break;
+	case 'o': return o; break;
+	case 'p': return p; break;
+	case 'q': return q; break;
+	case 'r': return r; break;
+	case 's': return s; break;
+	case 't': return t; break;
+	case 'u': return u; break;
+	case 'v': return v; break;
+	case 'w': return w; break;
+	case 'x': return x; break;
+	case 'y': return y; break;
+	case 'z': return z; break;
+	case '{': return LEFT_CURLY; break;
+	case '|': return PIPE; break;
+	case '}': return RIGHT_CURLY; break;
+	default: std:: cout <<  "UNKNOWN TEXT ELEMENT"; break;
+	}
+}
+
 SDL_Window* window = nullptr;
 
 //box2d setup
@@ -176,7 +360,7 @@ namespace GameEngine {
 
 			glClear(GL_COLOR_BUFFER_BIT);
 
-			//Multiple background layers
+			//Create Backgrounds/Background Assets
 			for (auto i = getLevel().background.begin(); i != getLevel().background.end(); ++i)
 			{
 				if (!(*i)->isTiled)
@@ -487,7 +671,6 @@ namespace GameEngine {
 
 						for (int y = 0; y < (*i)->numTiles.y; ++y)
 						{
-							std::cout << "-----------------" << std::endl;
 
 							for (int x = 0; x < (*i)->numTiles.x; ++x)
 							{
@@ -500,10 +683,6 @@ namespace GameEngine {
 								
 								int column = tileID % (*i)->tileMapSize.columns;
 								int row = tileID / (*i)->tileMapSize.columns;
-
-								std::cout << "Tile ID: " << tileID << std::endl;
-								std::cout << "Columns: " << column << std::endl;
-								std::cout << "Rows: " << row << std::endl;
 
 								float texWidth = 1.0f / (*i)->tileMapSize.columns;
 								float texHeight = 1.0f / (*i)->tileMapSize.rows;
@@ -545,7 +724,6 @@ namespace GameEngine {
 			}
 
 			// Delete GameObjects
-
 			for (int i = getLevel().levelObjects.size() - 1; i >= 0; --i) {
 				if (getLevel().levelObjects[i]->toBeDeleted == true) {
 					getLevel().levelObjects[i]->OnDestroyed();
@@ -948,15 +1126,224 @@ namespace GameEngine {
 				}
 			}
 
+			//Create UI text elements
+			for (int i = 0; i < getLevel().uiTexts.size(); i++)
+			{
+				UIText* targetUI = getLevel().uiTexts[i];
+				if (!targetUI->isInit) 
+				{
+					std::cout << "Initialize tiled background" << std::endl;
+
+					float tempVertices[] = {
+						// positions         // colors           // texture coords
+						0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   1.f / ((float)targetUI->myFont->bitMapSize.columns),  1.f,   // top right
+						0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   1.f / ((float)targetUI->myFont->bitMapSize.columns),  1.f - (1.f / ((float)targetUI->myFont->bitMapSize.rows)),   // bottom right
+					   -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   0.0f,											1.f - (1.f / ((float)targetUI->myFont->bitMapSize.rows)),   // bottom left
+					   -0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   0.0f,											1.f    // top left
+					};
+
+					std::copy(std::begin(tempVertices), std::end(tempVertices), std::begin(targetUI->myVertices));
+
+					// Initialize tiled background
+					glGenBuffers(1, &targetUI->m_vbo); // Generate 1 buffer
+					glGenBuffers(1, &targetUI->m_ebo);
+					glGenVertexArrays(1, &targetUI->m_vao);
+
+					// 1. bind Vertex Array Object
+					glBindVertexArray(targetUI->m_vao);
+
+					// 2. copy our vertices array in a buffer for OpenGL to use
+					glBindBuffer(GL_ARRAY_BUFFER, targetUI->m_vbo);
+					glBufferData(GL_ARRAY_BUFFER, sizeof(targetUI->myVertices), targetUI->myVertices, GL_STATIC_DRAW);
+
+					glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, targetUI->m_ebo);
+					glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(m_Indices), m_Indices, GL_STATIC_DRAW);
+
+					// Vertex Shader
+					const char* vertexShaderSource = R"glsl(
+                    #version 330 core
+                    in vec3 position;
+                    in vec3 color;
+                    in vec2 texCoord;
+                    out vec3 Color;
+                    out vec2 TexCoord;
+                    uniform mat4 model;
+                    void main()
+                    {
+                        Color = color;
+                        TexCoord = texCoord;
+                        gl_Position = model * vec4(position, 1.0);
+                    }
+                )glsl";
+
+					GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+					glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+					glCompileShader(vertexShader);
+
+					GLint success;
+					glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+
+					// Fragment Shader
+					const char* fragmentShaderSource = R"glsl(
+                    #version 330 core
+                    in vec3 Color;
+                    in vec2 TexCoord;
+                    out vec4 outColor;
+                    uniform sampler2D ourTexture;
+                    void main()
+                    {
+                        vec4 colTex1 = texture(ourTexture, TexCoord);
+                        if(colTex1 == vec4(1, 0, 1, 1)) discard;
+                        outColor = colTex1;
+                    }
+                )glsl";
+
+					GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+					glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+					glCompileShader(fragmentShader);
+
+					glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+
+					targetUI->m_ShaderProgram = glCreateProgram();
+					glAttachShader(targetUI->m_ShaderProgram, vertexShader);
+					glAttachShader(targetUI->m_ShaderProgram, fragmentShader);
+					glLinkProgram(targetUI->m_ShaderProgram);
+
+					glDeleteShader(vertexShader);
+					glDeleteShader(fragmentShader);
+
+					glGetProgramiv(m_ShaderProgram, GL_LINK_STATUS, &success);
+
+					// 3. then set our vertex attributes pointers
+					GLint posAttrib = glGetAttribLocation(targetUI->m_ShaderProgram, "position");
+					glEnableVertexAttribArray(posAttrib);
+					glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+
+					GLint colorAttrib = glGetAttribLocation(targetUI->m_ShaderProgram, "color");
+					glEnableVertexAttribArray(colorAttrib);
+					glVertexAttribPointer(colorAttrib, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+
+					GLint texCoordAttrib = glGetAttribLocation(targetUI->m_ShaderProgram, "texCoord");
+					glEnableVertexAttribArray(texCoordAttrib);
+					glVertexAttribPointer(texCoordAttrib, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+
+					glGenTextures(1, &targetUI->m_Texture);
+					glBindTexture(GL_TEXTURE_2D, targetUI->m_Texture);
+
+					// set the texture wrapping/filtering options (on the currently bound texture object)
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+					glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+					stbi_set_flip_vertically_on_load(true);
+
+					int width, height, nrChannels;
+					unsigned char* data = stbi_load(targetUI->myFont->bitMapPath.c_str(), &width, &height, &nrChannels, 0);
+					if (data)
+					{
+						glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+						glGenerateMipmap(GL_TEXTURE_2D);
+					}
+					else
+					{
+						std::cout << "Failed to load texture" << targetUI->myFont->bitMapPath << std::endl;
+					}
+					stbi_image_free(data);
+
+					glUseProgram(targetUI->m_ShaderProgram);
+
+					GLuint textureLocation;
+					textureLocation = glGetUniformLocation(targetUI->m_ShaderProgram, "ourTexture");
+					glUniform1i(textureLocation, 0);
+
+					targetUI->isInit = true;
+				}
+				if (targetUI->isInit)
+				{
+					glUseProgram(targetUI->m_ShaderProgram);
+
+					targetUI->charText = isolateChars(targetUI->myText);
+					int nLetters = 0;
+
+					std::vector<int> letterIDs;
+					std::vector<int> nLetterInPar;
+
+					for (int i = 0; i < targetUI->charText.size(); i++)
+					{
+						
+						if (targetUI->charText[i] == '\n')
+						{
+							nLetterInPar.push_back(nLetters);
+							//std::cout << "Number of letters in paragraph: " << nLetters << std::endl;
+							nLetters = 0;
+						}
+						else
+						{
+							nLetters++;
+							letterIDs.push_back(returnCharEnum(targetUI->charText[i]));
+						}
+					}
+
+					nLetterInPar.push_back(nLetters);
+
+					for (int y = 0; y < nLetterInPar.size(); ++y)
+					{
+
+						for (int x = 0; x < nLetterInPar[y]; ++x)
+						{
+							int tileIndex = y * nLetterInPar[y] + x;
+							//std::cout << "Tile Index: " << tileIndex << std::endl;
+							if (tileIndex >= letterIDs.size())
+								continue;
+
+							int tileID = letterIDs[tileIndex];
+
+							int column = tileID % targetUI->myFont->bitMapSize.columns;
+							int row = tileID / targetUI->myFont->bitMapSize.columns;
+
+							float texWidth = 1.0f / targetUI->myFont->bitMapSize.columns;
+							float texHeight = 1.0f / targetUI->myFont->bitMapSize.rows;
+
+							float xTexCoord = column * texWidth;
+							float yTexCoord = 1.0f - ((row + 1) * texHeight);
+
+							// Update texture coordinates
+							targetUI->myVertices[6] = xTexCoord + texWidth;
+							targetUI->myVertices[7] = yTexCoord + texHeight; // Top right
+							targetUI->myVertices[14] = xTexCoord + texWidth;
+							targetUI->myVertices[15] = yTexCoord; // Bottom right
+							targetUI->myVertices[22] = xTexCoord;
+							targetUI->myVertices[23] = yTexCoord; // Bottom left
+							targetUI->myVertices[30] = xTexCoord;
+							targetUI->myVertices[31] = yTexCoord + texHeight; // Top left
+
+							// Update VBO with new texture coordinates
+							glBindBuffer(GL_ARRAY_BUFFER, targetUI->m_vbo);
+							glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(targetUI->myVertices), targetUI->myVertices);
+
+							glm::mat4 model = glm::mat4(1.0f); // Identity matrix
+							model = glm::translate(model, glm::vec3(targetUI->position.x + x * targetUI->size.x, targetUI->position.y - y * targetUI->size.y, 1.0f)); // Apply translation
+							model = glm::scale(model, glm::vec3(targetUI->size.x, targetUI->size.y, 1.0f)); // Apply scaling
+
+							// Pass the model matrix to the shader
+							GLuint modelLoc = glGetUniformLocation(targetUI->m_ShaderProgram, "model");
+							glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+							glBindVertexArray(targetUI->m_vao);
+							glActiveTexture(GL_TEXTURE0);
+							glBindTexture(GL_TEXTURE_2D, targetUI->m_Texture);
+							glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+						}
+					}
+				}
+			}
+
 			SDL_GL_SwapWindow(window);
 		}
 			SDL_DestroyWindow(window);
-			//SDL_DestroyRenderer(renderTarget);
 
 			window = nullptr;
-			windowSurface = nullptr;
-			background = nullptr;
-			renderTarget = nullptr;
 
 			b2DestroyWorld(worldId);
 			worldId = b2_nullWorldId;
@@ -1128,6 +1515,11 @@ void GameLevel::addObject(GameObject* obj)
 {
 	levelObjects.push_back(obj);
 	obj->OnStart();
+}
+
+void GameLevel::addUIText(UIText* uiText)
+{
+	uiTexts.push_back(uiText);
 }
 
 int Animation::GetSpriteWidth()

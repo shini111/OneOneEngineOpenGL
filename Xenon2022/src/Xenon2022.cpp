@@ -897,7 +897,6 @@ public:
 			explosion* boom = new explosion();
 			boom->position.x = position.x;
 			boom->position.y = position.y;
-			std::cout << "Companion Taking Damage" << std::endl;
 			isInit = false;
 			animation = new Animation("resources/graphics/clone.bmp", 1.f, textureDimentions, false, {19});
 			engine.getLevel().addObject(boom);
@@ -906,7 +905,6 @@ public:
 		}
 
 		if (contact.objectGroup == "enemy") {
-			std::cout << "Companion Taking Damage" << std::endl;
 			isInit = false;
 			animation = new Animation("resources/graphics/clone.bmp", 0.1f, textureDimentions, false, {19});
 			TakeShipDamage();
@@ -1296,21 +1294,24 @@ int main()
 	std::vector<int> tileIDs2 = { 0 };
 	std::vector<int> tileIDs = { 400,401,402,403,404,416,417,418,419,420,432,433,434,435,436,448,449,450,451,452,464,465,466,467,468,480,481,482,483,484,496,497,498,499,500 };
 	backgroundAssets* backgroundLayer2 = new backgroundAssets("resources/graphics/Blocks.bmp", 0.2f, 0.2f, 0.f, 0.f, true, 64, 16, 5, 7, tileIDs);
-
 	
 	backgroundAssets* firstLayer3 = new backgroundAssets("resources/graphics/MAster96.bmp", 0.1f, 0.1f, 0.0f, 0.f, false, 5,5, 1 , 1, tileIDs2);
 
+	level.setLayerSize(3);
+	level.background[0] = backgroundLayer1;
+	level.background[1] = firstLayer3;
+	level.background[2] = backgroundLayer2;
 
-	level.setLayerSize(1);
-	//level.background[0] = backgroundLayer1;
-	//level.background[0] = firstLayer3;
-	level.background[0] = backgroundLayer2;
+	Font* myFont = new Font("resources/graphics/font16x16.bmp", 8, 12);
+	UIText* myUIText = new UIText(myFont, "Hello \n world!", -0.5f, 0.5f, 0.2f, 0.2f);
 
 	engine.setLevel(level);
 
+	engine.getLevel().addUIText(myUIText);
+
 	spaceship* ship = new spaceship();
 	engine.getLevel().addObject(ship);
-	/*
+	
 	rusherSpawner* spawner = new rusherSpawner();
 	engine.getLevel().addObject(spawner);
 
@@ -1330,19 +1331,6 @@ int main()
 	p1->position.x = 0.f;
 	p1->position.y = 250;
 	engine.getLevel().addObject(p1);
-
-	powerUpCompanion* p2 = new powerUpCompanion();
-	p2->position.x = -100.f;
-	p2->position.y = 300.f;
-	engine.getLevel().addObject(p2);
-
-	powerUpCompanion* p3 = new powerUpCompanion();
-	p3->position.x = 100.f;
-	p3->position.y = 500.f;
-	engine.getLevel().addObject(p3);
-	*/
-
-
 
 	engine.Initialize(gameWindow);
 

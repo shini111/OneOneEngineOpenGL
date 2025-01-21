@@ -68,15 +68,69 @@ public:
 		void Init();
 };
 
+class Font
+{
+public:
+	Font(std::string filepath, int rows = 1, int columns = 1)
+		: bitMapPath(filepath), bitMapSize{ rows, columns }
+	{
+	}
+
+	std::string bitMapPath;
+
+	struct {
+		int columns;
+		int rows;
+	}bitMapSize;
+
+};
+
+class UIText
+{
+public:
+
+	UIText(Font* font, std::string text, float posX = 0.f, float posY = 0.f, float sizeX = 1.f, float sizeY = 1.f)
+		: myFont(font), myText(text), position{ posX, posY }, size{ sizeX, sizeY }
+	{
+	}
+
+	unsigned int m_ShaderProgram;
+	unsigned int m_vao;
+	unsigned int m_Texture;
+	unsigned int m_ebo;
+	unsigned int m_vbo;
+	float myVertices[32];
+	bool isInit = false;
+	std::string myText;
+	std::vector<char> charText;
+
+	Font* myFont;
+	struct
+	{
+		float x;
+		float y;
+	}position;
+
+	struct
+	{
+		float x;
+		float y;
+	}size;
+
+};
+
 class GameLevel
 {
 public:
 	std::vector<GameObject*> levelObjects;
 	std::vector<LevelBackground*> background;
+	std::vector<UIText*> uiTexts;
 
 	void setLayerSize(int layerSize);
 	void addObject(GameObject* obj);
-	
+	void addUIText(UIText* uitext);
 
 };
+
+
 
