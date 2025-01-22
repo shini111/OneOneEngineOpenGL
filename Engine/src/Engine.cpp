@@ -117,18 +117,46 @@ enum CharEnum {
 	LEFT_CURLY = 91,
 	PIPE = 92,
 	RIGHT_CURLY = 93,
+	UNKNOWN = 94
 };
+// 	std::vector<char> chars;
+// 	for (char c : str) {
+// 		chars.push_back(c);
+// 	}
+// 
+// 	std::cout << "Isolated characters: ";
+// 	for (char c : chars) {
+// 		std::cout << c << ' ';
+// 	}
+// 	std::cout << std::endl;
+// 
+// 
+// 	return chars;
+
 
 std::vector<char> isolateChars(const std::string& str) {
 	std::vector<char> chars;
 	for (char c : str) {
 		chars.push_back(c);
 	}
+// 
+// 	// Print all isolated characters
+// 	std::cout << "Isolated characters: ";
+// 	for (char c : chars) {
+// 		if (c == '\n') {
+// 			std::cout << "\\n" << ' ';
+// 		}
+// 		else {
+// 			std::cout << c << ' ';
+// 		}
+// 	}
+// 	std::cout << std::endl;
+
 	return chars;
 }
 
-int returnCharEnum(char c) {
-	switch (c) {
+int returnCharEnum(char letter) {
+	switch (letter) {
 	case ' ': return SPACEBAR; break;
 	case '!': return EXCLAMATION; break;
 	case '"': return DOUBLE_QUOTE; break;
@@ -223,7 +251,7 @@ int returnCharEnum(char c) {
 	case '{': return LEFT_CURLY; break;
 	case '|': return PIPE; break;
 	case '}': return RIGHT_CURLY; break;
-	default: std:: cout <<  "UNKNOWN TEXT ELEMENT"; break;
+	default: return UNKNOWN; break;
 	}
 }
 
@@ -353,48 +381,48 @@ namespace GameEngine {
 
 
 
-			for (int i = 0; i < getLevel().listOfLayers.size(); i++)
+			for (int i = 0; i < getLevel()->listOfLayers.size(); i++)
 			{
-				getLevel().listOfLayers[i].clear();
+				getLevel()->listOfLayers[i].clear();
 			}
 
 			//Sort/Update LevelBackground
-			for (int i = 0; i < getLevel().background.size(); ++i)
+			for (int i = 0; i < getLevel()->levelbackgrounds.size(); ++i)
 			{
-				getLevel().background[i]->OnUpdate();
-				getLevel().listOfLayers[getLevel().background[i]->GetSortingLayer()].push_back(getLevel().background[i]);
+				getLevel()->levelbackgrounds[i]->OnUpdate();
+				getLevel()->listOfLayers[getLevel()->levelbackgrounds[i]->GetSortingLayer()].push_back(getLevel()->levelbackgrounds[i]);
 			}
 
 			// Delete GameObjects
-			for (int i = getLevel().levelObjects.size() - 1; i >= 0; --i) {
-				if (getLevel().levelObjects[i]->toBeDeleted == true) {
-					getLevel().levelObjects[i]->OnDestroyed();
-					if (getLevel().levelObjects[i]->animation->tilemapPath != "")
+			for (int i = getLevel()->levelObjects.size() - 1; i >= 0; --i) {
+				if (getLevel()->levelObjects[i]->toBeDeleted == true) {
+					getLevel()->levelObjects[i]->OnDestroyed();
+					if (getLevel()->levelObjects[i]->animation->tilemapPath != "")
 					{
-						glUseProgram(getLevel().levelObjects[i]->m_ShaderProgram);
+						glUseProgram(getLevel()->levelObjects[i]->m_ShaderProgram);
 						glBindVertexArray(0);
 						glBindBuffer(GL_ARRAY_BUFFER, 0);
 						glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 						glActiveTexture(GL_TEXTURE0);
-						glDeleteProgram(getLevel().levelObjects[i]->m_ShaderProgram);
+						glDeleteProgram(getLevel()->levelObjects[i]->m_ShaderProgram);
 					}
 
-					if (getLevel().levelObjects[i]->bodyId != nullptr)
+					if (getLevel()->levelObjects[i]->bodyId != nullptr)
 					{
-						b2DestroyBody(*getLevel().levelObjects[i]->bodyId);
+						b2DestroyBody(*getLevel()->levelObjects[i]->bodyId);
 					}
 					else
 					{
 						std::cout << "Object with no body" << i << std::endl;
 					}
-					delete getLevel().levelObjects[i];
-					getLevel().levelObjects.erase(getLevel().levelObjects.begin() + i);
+					delete getLevel()->levelObjects[i];
+					getLevel()->levelObjects.erase(getLevel()->levelObjects.begin() + i);
 				}
 			}
 
-			for (int i = getLevel().levelObjects.size() - 1; i >= 0; --i)
+			for (int i = getLevel()->levelObjects.size() - 1; i >= 0; --i)
 			{
-				auto obj = getLevel().levelObjects[i];
+				auto obj = getLevel()->levelObjects[i];
 				if (obj->bodyId != nullptr)
 				{
 					b2DestroyBody(*obj->bodyId);
@@ -407,22 +435,22 @@ namespace GameEngine {
 			}
 
 			//Sort/Update Level Objects
-			for (int i = 0; i < getLevel().levelObjects.size(); ++i)
+			for (int i = 0; i < getLevel()->levelObjects.size(); ++i)
 			{
-				getLevel().levelObjects[i]->OnUpdate();
-				getLevel().listOfLayers[getLevel().levelObjects[i]->GetSortingLayer()].push_back(getLevel().levelObjects[i]);
+				getLevel()->levelObjects[i]->OnUpdate();
+				getLevel()->listOfLayers[getLevel()->levelObjects[i]->GetSortingLayer()].push_back(getLevel()->levelObjects[i]);
 			}
 
 			//Sort/Update UI Text
-			for (int i = 0; i < getLevel().uiTexts.size(); ++i)
+			for (int i = 0; i < getLevel()->uiTexts.size(); ++i)
 			{
-				getLevel().uiTexts[i]->OnUpdate();
-				getLevel().listOfLayers[getLevel().uiTexts[i]->GetSortingLayer()].push_back(getLevel().uiTexts[i]);
+				getLevel()->uiTexts[i]->OnUpdate();
+				getLevel()->listOfLayers[getLevel()->uiTexts[i]->GetSortingLayer()].push_back(getLevel()->uiTexts[i]);
 			}
 
 			//Manage Created Objects
-			for (int i = 0; i < getLevel().levelObjects.size(); ++i) {
-				GameObject* obj = getLevel().levelObjects[i];
+			for (int i = 0; i < getLevel()->levelObjects.size(); ++i) {
+				GameObject* obj = getLevel()->levelObjects[i];
 
 				Animation* spriteAnimation = obj->animation;
 
@@ -430,20 +458,20 @@ namespace GameEngine {
 					//This is a just a workaround for now. I will implement a better way to handle this later, because i need to create
 					//a bool variable for objects for the user to want or not a box2d body but right now i dont have time for that.
 
-				if (getLevel().levelObjects[i]->hasBox2d)
+				if (getLevel()->levelObjects[i]->hasBox2d)
 				{
-					float bodyWidth;// = getLevel().levelObjects[i]->collisionBoxSize.w;
-					float bodyHeight;// = getLevel().levelObjects[i]->collisionBoxSize.h;
-					bodyWidth = getLevel().levelObjects[i]->collisionBoxSize.w / 2.0f;
-					bodyHeight = getLevel().levelObjects[i]->collisionBoxSize.h / 2.0f;
+					float bodyWidth;// = getLevel()->levelObjects[i]->collisionBoxSize.w;
+					float bodyHeight;// = getLevel()->levelObjects[i]->collisionBoxSize.h;
+					bodyWidth = getLevel()->levelObjects[i]->collisionBoxSize.w / 2.0f;
+					bodyHeight = getLevel()->levelObjects[i]->collisionBoxSize.h / 2.0f;
 
 
 					b2BodyDef* bodyDef = new b2BodyDef;
 					*bodyDef = b2DefaultBodyDef();
 					bodyDef->type = b2_dynamicBody;
-					bodyDef->position = { getLevel().levelObjects[i]->position.x, getLevel().levelObjects[i]->position.y };
-					//bodyDef-> = getLevel().levelObjects[i]->isBullet;
-					bodyDef->userData = getLevel().levelObjects[i];
+					bodyDef->position = { getLevel()->levelObjects[i]->position.x, getLevel()->levelObjects[i]->position.y };
+					//bodyDef-> = getLevel()->levelObjects[i]->isBullet;
+					bodyDef->userData = getLevel()->levelObjects[i];
 
 
 					b2BodyId* bodyId = new b2BodyId;
@@ -461,25 +489,25 @@ namespace GameEngine {
 					shapeDef->density = 1.0f;
 					shapeDef->friction = 0.3f;
 
-					//shapeDef->enableSensorEvents = getLevel().levelObjects[i]->hasSense;
+					//shapeDef->enableSensorEvents = getLevel()->levelObjects[i]->hasSense;
 
 					//shapeDef->enableSensorEvents = true;
-					//shapeDef->isSensor = getLevel().levelObjects[i]->hasSense;
+					//shapeDef->isSensor = getLevel()->levelObjects[i]->hasSense;
 
 					//shapeDef->enableContactEvents = true;
 
-					shapeDef->userData = getLevel().levelObjects[i];
+					shapeDef->userData = getLevel()->levelObjects[i];
 
 					shapeDef->enableContactEvents = true;
 
 					b2ShapeId* shapeId = new b2ShapeId;
 					*shapeId = b2CreatePolygonShape(*bodyId, shapeDef, dynamicBox);
 
-					getLevel().levelObjects[i]->bodyId = bodyId;
-					getLevel().levelObjects[i]->bodyDef = bodyDef;
-					getLevel().levelObjects[i]->shapeId = shapeId;
-					getLevel().levelObjects[i]->shapeDef = shapeDef;
-					getLevel().levelObjects[i]->boxCollision = dynamicBox;
+					getLevel()->levelObjects[i]->bodyId = bodyId;
+					getLevel()->levelObjects[i]->bodyDef = bodyDef;
+					getLevel()->levelObjects[i]->shapeId = shapeId;
+					getLevel()->levelObjects[i]->shapeDef = shapeDef;
+					getLevel()->levelObjects[i]->boxCollision = dynamicBox;
 				}
 
 				b2World_Step(worldId, timeStep, subStepCount);
@@ -496,10 +524,10 @@ namespace GameEngine {
 
 			glClear(GL_COLOR_BUFFER_BIT);
 
-			for (int i = 0; i < getLevel().listOfLayers.size(); i++)
+			for (int i = 0; i < getLevel()->listOfLayers.size(); i++)
 			{
 				
-				for (Object* obj: getLevel().listOfLayers[i])
+				for (Object* obj: getLevel()->listOfLayers[i])
 				{
 					switch (obj->getType())
 					{
@@ -1163,216 +1191,207 @@ namespace GameEngine {
 						//Create UI text elements
 						if (UIText* targetUI = dynamic_cast<UIText*>(obj))
 						{
-								if (!targetUI->isInit)
+							if (!targetUI->isInit)
+							{
+								std::cout << "Initialize tiled font" << std::endl;
+
+								float tempVertices[] = {
+									// positions         // colors           // texture coords
+									0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   1.f / ((float)targetUI->myFont->bitMapSize.columns),  1.f,   // top right
+									0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   1.f / ((float)targetUI->myFont->bitMapSize.columns),  1.f - (1.f / ((float)targetUI->myFont->bitMapSize.rows)),   // bottom right
+								   -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   0.0f,											1.f - (1.f / ((float)targetUI->myFont->bitMapSize.rows)),   // bottom left
+								   -0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   0.0f,											1.f    // top left
+								};
+
+								std::copy(std::begin(tempVertices), std::end(tempVertices), std::begin(targetUI->myVertices));
+
+								// Initialize tiled background
+								glGenBuffers(1, &targetUI->m_vbo); // Generate 1 buffer
+								glGenBuffers(1, &targetUI->m_ebo);
+								glGenVertexArrays(1, &targetUI->m_vao);
+
+								// 1. bind Vertex Array Object
+								glBindVertexArray(targetUI->m_vao);
+
+								// 2. copy our vertices array in a buffer for OpenGL to use
+								glBindBuffer(GL_ARRAY_BUFFER, targetUI->m_vbo);
+								glBufferData(GL_ARRAY_BUFFER, sizeof(targetUI->myVertices), targetUI->myVertices, GL_STATIC_DRAW);
+
+								glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, targetUI->m_ebo);
+								glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(m_Indices), m_Indices, GL_STATIC_DRAW);
+
+								// Vertex Shader
+								const char* vertexShaderSource = R"glsl(
+        #version 330 core
+        in vec3 position;
+        in vec3 color;
+        in vec2 texCoord;
+        out vec3 Color;
+        out vec2 TexCoord;
+        uniform mat4 model;
+        void main()
+        {
+            Color = color;
+            TexCoord = texCoord;
+            gl_Position = model * vec4(position, 1.0);
+        }
+        )glsl";
+
+								GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+								glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+								glCompileShader(vertexShader);
+
+								GLint success;
+								glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+
+								// Fragment Shader
+								const char* fragmentShaderSource = R"glsl(
+        #version 330 core
+        in vec3 Color;
+        in vec2 TexCoord;
+        out vec4 outColor;
+        uniform sampler2D ourTexture;
+        void main()
+        {
+            vec4 colTex1 = texture(ourTexture, TexCoord);
+            if(colTex1 == vec4(1, 0, 1, 1)) discard;
+            outColor = colTex1;
+        }
+        )glsl";
+
+								GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+								glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+								glCompileShader(fragmentShader);
+
+								glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+
+								targetUI->m_ShaderProgram = glCreateProgram();
+								glAttachShader(targetUI->m_ShaderProgram, vertexShader);
+								glAttachShader(targetUI->m_ShaderProgram, fragmentShader);
+								glLinkProgram(targetUI->m_ShaderProgram);
+
+								glDeleteShader(vertexShader);
+								glDeleteShader(fragmentShader);
+
+								glGetProgramiv(m_ShaderProgram, GL_LINK_STATUS, &success);
+
+								// 3. then set our vertex attributes pointers
+								GLint posAttrib = glGetAttribLocation(targetUI->m_ShaderProgram, "position");
+								glEnableVertexAttribArray(posAttrib);
+								glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+
+								GLint colorAttrib = glGetAttribLocation(targetUI->m_ShaderProgram, "color");
+								glEnableVertexAttribArray(colorAttrib);
+								glVertexAttribPointer(colorAttrib, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+
+								GLint texCoordAttrib = glGetAttribLocation(targetUI->m_ShaderProgram, "texCoord");
+								glEnableVertexAttribArray(texCoordAttrib);
+								glVertexAttribPointer(texCoordAttrib, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+
+								glGenTextures(1, &targetUI->m_Texture);
+								glBindTexture(GL_TEXTURE_2D, targetUI->m_Texture);
+
+								// set the texture wrapping/filtering options (on the currently bound texture object)
+								glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+								glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+								glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+								glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+								stbi_set_flip_vertically_on_load(true);
+
+								int width, height, nrChannels;
+								unsigned char* data = stbi_load(targetUI->myFont->bitMapPath.c_str(), &width, &height, &nrChannels, 0);
+								if (data)
 								{
-									std::cout << "Initialize tiled background" << std::endl;
-
-									float tempVertices[] = {
-										// positions         // colors           // texture coords
-										0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   1.f / ((float)targetUI->myFont->bitMapSize.columns),  1.f,   // top right
-										0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   1.f / ((float)targetUI->myFont->bitMapSize.columns),  1.f - (1.f / ((float)targetUI->myFont->bitMapSize.rows)),   // bottom right
-									   -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   0.0f,											1.f - (1.f / ((float)targetUI->myFont->bitMapSize.rows)),   // bottom left
-									   -0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   0.0f,											1.f    // top left
-									};
-
-									std::copy(std::begin(tempVertices), std::end(tempVertices), std::begin(targetUI->myVertices));
-
-									// Initialize tiled background
-									glGenBuffers(1, &targetUI->m_vbo); // Generate 1 buffer
-									glGenBuffers(1, &targetUI->m_ebo);
-									glGenVertexArrays(1, &targetUI->m_vao);
-
-									// 1. bind Vertex Array Object
-									glBindVertexArray(targetUI->m_vao);
-
-									// 2. copy our vertices array in a buffer for OpenGL to use
-									glBindBuffer(GL_ARRAY_BUFFER, targetUI->m_vbo);
-									glBufferData(GL_ARRAY_BUFFER, sizeof(targetUI->myVertices), targetUI->myVertices, GL_STATIC_DRAW);
-
-									glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, targetUI->m_ebo);
-									glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(m_Indices), m_Indices, GL_STATIC_DRAW);
-
-									// Vertex Shader
-									const char* vertexShaderSource = R"glsl(
-                    #version 330 core
-                    in vec3 position;
-                    in vec3 color;
-                    in vec2 texCoord;
-                    out vec3 Color;
-                    out vec2 TexCoord;
-                    uniform mat4 model;
-                    void main()
-                    {
-                        Color = color;
-                        TexCoord = texCoord;
-                        gl_Position = model * vec4(position, 1.0);
-                    }
-                )glsl";
-
-									GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-									glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-									glCompileShader(vertexShader);
-
-									GLint success;
-									glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-
-									// Fragment Shader
-									const char* fragmentShaderSource = R"glsl(
-                    #version 330 core
-                    in vec3 Color;
-                    in vec2 TexCoord;
-                    out vec4 outColor;
-                    uniform sampler2D ourTexture;
-                    void main()
-                    {
-                        vec4 colTex1 = texture(ourTexture, TexCoord);
-                        if(colTex1 == vec4(1, 0, 1, 1)) discard;
-                        outColor = colTex1;
-                    }
-                )glsl";
-
-									GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-									glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-									glCompileShader(fragmentShader);
-
-									glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-
-									targetUI->m_ShaderProgram = glCreateProgram();
-									glAttachShader(targetUI->m_ShaderProgram, vertexShader);
-									glAttachShader(targetUI->m_ShaderProgram, fragmentShader);
-									glLinkProgram(targetUI->m_ShaderProgram);
-
-									glDeleteShader(vertexShader);
-									glDeleteShader(fragmentShader);
-
-									glGetProgramiv(m_ShaderProgram, GL_LINK_STATUS, &success);
-
-									// 3. then set our vertex attributes pointers
-									GLint posAttrib = glGetAttribLocation(targetUI->m_ShaderProgram, "position");
-									glEnableVertexAttribArray(posAttrib);
-									glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-
-									GLint colorAttrib = glGetAttribLocation(targetUI->m_ShaderProgram, "color");
-									glEnableVertexAttribArray(colorAttrib);
-									glVertexAttribPointer(colorAttrib, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-
-									GLint texCoordAttrib = glGetAttribLocation(targetUI->m_ShaderProgram, "texCoord");
-									glEnableVertexAttribArray(texCoordAttrib);
-									glVertexAttribPointer(texCoordAttrib, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-
-									glGenTextures(1, &targetUI->m_Texture);
-									glBindTexture(GL_TEXTURE_2D, targetUI->m_Texture);
-
-									// set the texture wrapping/filtering options (on the currently bound texture object)
-									glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-									glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-									glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-									glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-									stbi_set_flip_vertically_on_load(true);
-
-									int width, height, nrChannels;
-									unsigned char* data = stbi_load(targetUI->myFont->bitMapPath.c_str(), &width, &height, &nrChannels, 0);
-									if (data)
-									{
-										glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-										glGenerateMipmap(GL_TEXTURE_2D);
-									}
-									else
-									{
-										std::cout << "Failed to load texture" << targetUI->myFont->bitMapPath << std::endl;
-									}
-									stbi_image_free(data);
-
-									glUseProgram(targetUI->m_ShaderProgram);
-
-									GLuint textureLocation;
-									textureLocation = glGetUniformLocation(targetUI->m_ShaderProgram, "ourTexture");
-									glUniform1i(textureLocation, 0);
-
-									targetUI->isInit = true;
+									glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+									glGenerateMipmap(GL_TEXTURE_2D);
 								}
-								if (targetUI->isInit)
+								else
 								{
-									glUseProgram(targetUI->m_ShaderProgram);
+									std::cout << "Failed to load texture" << targetUI->myFont->bitMapPath << std::endl;
+								}
+								stbi_image_free(data);
 
-									targetUI->charText = isolateChars(targetUI->myText);
-									int nLetters = 0;
+								glUseProgram(targetUI->m_ShaderProgram);
 
-									std::vector<int> letterIDs;
-									std::vector<int> nLetterInPar;
+								GLuint textureLocation;
+								textureLocation = glGetUniformLocation(targetUI->m_ShaderProgram, "ourTexture");
+								glUniform1i(textureLocation, 0);
 
-									for (int i = 0; i < targetUI->charText.size(); i++)
-									{
+								targetUI->isInit = true;
+							}
+							if (targetUI->isInit)
+							{
+								glUseProgram(targetUI->m_ShaderProgram);
 
-										if (targetUI->charText[i] == '\n')
-										{
-											nLetterInPar.push_back(nLetters);
-											//std::cout << "Number of letters in paragraph: " << nLetters << std::endl;
-											nLetters = 0;
-										}
-										else
-										{
-											nLetters++;
-											letterIDs.push_back(returnCharEnum(targetUI->charText[i]));
-										}
+								targetUI->charText = isolateChars(targetUI->myText);
+
+								int nLetters = 0;
+
+								std::vector<int> letterIDs;
+								std::vector<int> nLetterInPar;
+
+								for (int i = 0; i < targetUI->charText.size(); i++) {
+									if (targetUI->charText[i] == '\n' || returnCharEnum(targetUI->charText[i]) == UNKNOWN) {
+										nLetterInPar.push_back(nLetters);
+										nLetters = 0;
 									}
-
-									nLetterInPar.push_back(nLetters);
-
-									for (int y = 0; y < nLetterInPar.size(); ++y)
-									{
-
-										for (int x = 0; x < nLetterInPar[y]; ++x)
-										{
-											int tileIndex = y * nLetterInPar[y] + x;
-											//std::cout << "Tile Index: " << tileIndex << std::endl;
-											if (tileIndex >= letterIDs.size())
-												continue;
-
-											int tileID = letterIDs[tileIndex];
-
-											int column = tileID % targetUI->myFont->bitMapSize.columns;
-											int row = tileID / targetUI->myFont->bitMapSize.columns;
-
-											float texWidth = 1.0f / targetUI->myFont->bitMapSize.columns;
-											float texHeight = 1.0f / targetUI->myFont->bitMapSize.rows;
-
-											float xTexCoord = column * texWidth;
-											float yTexCoord = 1.0f - ((row + 1) * texHeight);
-
-											// Update texture coordinates
-											targetUI->myVertices[6] = xTexCoord + texWidth;
-											targetUI->myVertices[7] = yTexCoord + texHeight; // Top right
-											targetUI->myVertices[14] = xTexCoord + texWidth;
-											targetUI->myVertices[15] = yTexCoord; // Bottom right
-											targetUI->myVertices[22] = xTexCoord;
-											targetUI->myVertices[23] = yTexCoord; // Bottom left
-											targetUI->myVertices[30] = xTexCoord;
-											targetUI->myVertices[31] = yTexCoord + texHeight; // Top left
-
-											// Update VBO with new texture coordinates
-											glBindBuffer(GL_ARRAY_BUFFER, targetUI->m_vbo);
-											glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(targetUI->myVertices), targetUI->myVertices);
-
-											glm::mat4 model = glm::mat4(1.0f); // Identity matrix
-											model = glm::translate(model, glm::vec3(targetUI->position.x + x * targetUI->size.x, targetUI->position.y - y * targetUI->size.y, 1.0f)); // Apply translation
-											model = glm::scale(model, glm::vec3(targetUI->size.x, targetUI->size.y, 1.0f)); // Apply scaling
-
-											// Pass the model matrix to the shader
-											GLuint modelLoc = glGetUniformLocation(targetUI->m_ShaderProgram, "model");
-											glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-
-											glBindVertexArray(targetUI->m_vao);
-											glActiveTexture(GL_TEXTURE0);
-											glBindTexture(GL_TEXTURE_2D, targetUI->m_Texture);
-											glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-										}
+									else {
+										nLetters++;
+										letterIDs.push_back(returnCharEnum(targetUI->charText[i]));
 									}
 								}
-							
+								nLetterInPar.push_back(nLetters);
+
+								int letterwritten = 0;
+								for (int y = 0; y < nLetterInPar.size(); ++y) {
+									for (int x = 0; x < nLetterInPar[y]; ++x) {
+										int tileIndex = letterwritten;
+										if (tileIndex >= letterIDs.size())
+											continue;
+										letterwritten++;
+										int tileID = letterIDs[tileIndex];
+										std::cout << "-" << tileIndex;
+										int column = tileID % targetUI->myFont->bitMapSize.columns;
+										int row = tileID / targetUI->myFont->bitMapSize.columns;
+
+										float texWidth = 1.0f / targetUI->myFont->bitMapSize.columns;
+										float texHeight = 1.0f / targetUI->myFont->bitMapSize.rows;
+
+										float xTexCoord = column * texWidth;
+										float yTexCoord = 1.0f - ((row + 1) * texHeight);
+
+										// Update texture coordinates
+										targetUI->myVertices[6] = xTexCoord + texWidth;
+										targetUI->myVertices[7] = yTexCoord + texHeight; // Top right
+										targetUI->myVertices[14] = xTexCoord + texWidth;
+										targetUI->myVertices[15] = yTexCoord; // Bottom right
+										targetUI->myVertices[22] = xTexCoord;
+										targetUI->myVertices[23] = yTexCoord; // Bottom left
+										targetUI->myVertices[30] = xTexCoord;
+										targetUI->myVertices[31] = yTexCoord + texHeight; // Top left
+
+										// Update VBO with new texture coordinates
+										glBindBuffer(GL_ARRAY_BUFFER, targetUI->m_vbo);
+										glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(targetUI->myVertices), targetUI->myVertices);
+
+										glm::mat4 model = glm::mat4(1.0f); // Identity matrix
+										model = glm::translate(model, glm::vec3(targetUI->position.x + x * targetUI->size.x, targetUI->position.y - y * targetUI->size.y, 1.0f)); // Apply translation
+										model = glm::scale(model, glm::vec3(targetUI->size.x, targetUI->size.y, 1.0f)); // Apply scaling
+
+										// Pass the model matrix to the shader
+										GLuint modelLoc = glGetUniformLocation(targetUI->m_ShaderProgram, "model");
+										glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+
+										glBindVertexArray(targetUI->m_vao);
+										glActiveTexture(GL_TEXTURE0);
+										glBindTexture(GL_TEXTURE_2D, targetUI->m_Texture);
+										glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+									}
+									std::cout << std::endl << std::endl;
+								}
+							}
 						}
-						
 						break;
 					default:
 						std::cout << "No Object type to render found!" << std::endl;
@@ -1380,19 +1399,6 @@ namespace GameEngine {
 					}
 				}
 			}
-			
-
-		
-
-
-
-	
-
-			
-
-			
-
-
 
 			SDL_GL_SwapWindow(window);
 		}
@@ -1460,19 +1466,16 @@ namespace GameEngine {
 			std::cout << "Failed to initialize GLAD: " << error << std::endl;
 			SDL_Quit();
 		}
-		//glEnable(GL_DEPTH_TEST);
 
 		SDL_GL_MakeCurrent(window, m_Context);
 
 		b2World_EnableContinuous(worldId, true);
 
-		//Init("resources/graphics/galaxy2.bmp");
-		//updateActor();
 
 		Update();
 	}
 
-	void Engine::setLevel(GameLevel level)
+	void Engine::setLevel(GameLevel* level)
 	{
 		mainLevel = level;
 	}
@@ -1480,11 +1483,6 @@ namespace GameEngine {
 	void Engine::print(std::string printText)
 	{
 		std::cout << printText << std::endl;
-	}
-
-	GameLevel& Engine::getLevel()
-	{
-		return mainLevel;
 	}
 
 	void Engine::sensorListener()
@@ -1544,23 +1542,7 @@ namespace GameEngine {
 	}
 
 
-// 	bool Engine::b2OverlapResultFcn(b2ShapeId id) {
-// 		
-// 		GameObject* obj = static_cast<GameObject*>(b2Shape_GetUserData(id));
-// 		if (obj != nullptr && obj->objectGroup)
-// 		{
-// 			return true;
-// 		}
-// 		// continue the query
-// 		return true;
-// 	}
 }
-
-void GameLevel::setLayerSize(int layerSize)
-{
-	background.resize(layerSize);
-}
-
 void GameObject::Destroy()
 {
 	toBeDeleted = true;
@@ -1576,6 +1558,12 @@ void GameLevel::addUIText(UIText* uiText)
 {
 	uiTexts.push_back(uiText);
 }
+
+void GameLevel::addBackground(LevelBackground* background)
+{
+	levelbackgrounds.push_back(background);
+}
+
 
 void GameLevel::SetSortingLayerSize(int i)
 {

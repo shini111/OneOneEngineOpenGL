@@ -2,6 +2,7 @@
 #include <random>
 #include <cmath>
 #include <algorithm>
+#include <iomanip>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -53,7 +54,7 @@ public:
 	}
 
 private:
-	int myScore = 0;
+	int myScore = 10;
 
 
 };
@@ -68,11 +69,39 @@ public:
 
 	void OnUpdate() override 
 	{
-		MyLevel* m_level = dynamic_cast<MyLevel*>(&engine.getLevel());
-		std::cout<< "My Score: " << m_level->GetScore() << std::endl;
-		//myText = "Hi Score \n" + m_level->GetScore();
+		std::string aux = std::to_string(dynamic_cast<MyLevel*>(engine.getLevel())->GetScore());
+		aux = std::string(10 - aux.length(), '0') + aux;
+		std::string aux2 = "Score: \n";
+		myText = aux2 + aux;
+	}
+};
+
+class backgroundAssets : public LevelBackground
+{
+public:
+
+	backgroundAssets(std::string filepath, float sizeX, float sizeY, float posX, float posY, bool tile, int rows, int columns, int numTilesX, int numTilesY, std::vector<int> tileIDs)
+		: LevelBackground(filepath, sizeX, sizeY, posX, posY, tile, rows, columns, numTilesX, numTilesY, tileIDs)
+	{}
+};
+
+class PlayerLife : public LevelBackground
+{
+public:
+	PlayerLife(std::string filepath, float sizeX, float sizeY, float posX, float posY, bool tile, int rows = 1, int columns =  1, int numTilesX = 3, int numTilesY = 1, std::vector<int> tileIDs = {0,0,0,0,0})
+		: LevelBackground(filepath, sizeX, sizeY, posX, posY, tile, rows, columns, numTilesX, numTilesY, tileIDs)
+	{
 	}
 
+	void UpdateNumberOfLives(int i)
+	{
+		numTiles.x = i;
+	}
+	
+	void OnUpdate() override
+	{
+		std::cout << "Updating Player Life" << std::endl;
+	}
 };
 
 class powerUpMissile : public GameObject {
@@ -165,10 +194,11 @@ public:
 	Enemy(bool visibility = true, bool isBullet = false, bool hasSense = false)
 		: GameObject(visibility, isBullet, hasSense) {
 	}
+	int scoreValue = 10;
 
+public:
 	int healthPoints = 1;
 	float dropChance = 10.f;
-
 	void showDamageFeedback() {
 		modulate.r = 255;
 		modulate.g = 0;
@@ -204,7 +234,7 @@ public:
 	{
 		powerUp->position.x = posX;
 		powerUp->position.y = posY;
-		engine.getLevel().addObject(powerUp);
+		engine.getLevel()->addObject(powerUp);
 
 	}
 
@@ -237,6 +267,7 @@ public:
 				}
 			}
 			Destroy();
+			dynamic_cast<MyLevel*>(engine.getLevel())->AddScore(scoreValue);
 		}
 		else {
 
@@ -344,7 +375,7 @@ public:
 	float moveSpeed = 150.0f;
 	void OnStart() override {
 		healthPoints = 2;
-
+		scoreValue = 5;
 		int textureDimentions[2] = { 4,6 };
 
 		animation = new Animation("resources/graphics/rusher.bmp", 0.05f, textureDimentions, true, {});
@@ -371,7 +402,7 @@ public:
 			explosion* boom = new explosion();
 			boom->position.x = position.x;
 			boom->position.y = position.y;
-			engine.getLevel().addObject(boom);
+			engine.getLevel()->addObject(boom);
 
 			if (missile* missileContact = dynamic_cast<missile*>(&contact)) {
 
@@ -425,6 +456,8 @@ public:
 
 	void OnStart() override {
 
+		scoreValue = 7;
+
 		healthPoints = 3;
 
 		int textureDimentions[2] = { 4,4 };
@@ -443,7 +476,7 @@ public:
 
 			boom->position.x = position.x;
 			boom->position.y = position.y;
-			engine.getLevel().addObject(boom);
+			engine.getLevel()->addObject(boom);
 
 			if (missile* missileContact = dynamic_cast<missile*>(&contact)) {
 
@@ -461,7 +494,7 @@ public:
 			enemyProjectile* enemyProj = new enemyProjectile();
 			enemyProj->position.x = position.x - 10;
 			enemyProj->position.y = position.y - 35;
-			engine.getLevel().addObject(enemyProj);
+			engine.getLevel()->addObject(enemyProj);
 			time = 0;
 		}
 
@@ -541,7 +574,6 @@ public:
 	stoneAsteroid(bool visibility = true, bool isBullet = false, bool hasSense = true)
 		: Enemy(visibility, isBullet, hasSense) {
 	}
-
 	struct
 	{
 		float x = 0.0f;
@@ -559,21 +591,21 @@ public:
 		switch (asteroidSize) {
 		case 64:
 			healthPoints = 3;
-
+			scoreValue = 20;
 			textureDimentions[0] = 8;
 			textureDimentions[1] = 3;
 			animation = new Animation("resources/graphics/SAster64.bmp", 0.1f, textureDimentions, true, {});
 			break;
 		case 96:
 			healthPoints = 6;
-
+			scoreValue = 15;
 			textureDimentions[0] = 5;
 			textureDimentions[1] = 5;
 			animation = new Animation("resources/graphics/SAster96.bmp", 0.1f, textureDimentions, true, {});
 			break;
 		default:
 			healthPoints = 1;
-
+			scoreValue = 10;
 			textureDimentions[0] = 8;
 			textureDimentions[1] = 2;
 			animation = new Animation("resources/graphics/SAster32.bmp", 0.1f, textureDimentions, true, {});
@@ -590,7 +622,7 @@ public:
 		asteroid->asteroidSize = size;
 		asteroid->moveSpeed.x = speedX;
 		asteroid->moveSpeed.y = speedY;
-		engine.getLevel().addObject(asteroid);
+		engine.getLevel()->addObject(asteroid);
 	}
 
 	void OnDestroyed() override {
@@ -648,7 +680,7 @@ public:
 			explosion* boom = new explosion();
 			boom->position.x = position.x;
 			boom->position.y = position.y;
-			engine.getLevel().addObject(boom);
+			engine.getLevel()->addObject(boom);
 
 		}
 	}
@@ -666,8 +698,8 @@ public:
 	float elapsedTime = 0.f;
 	float sinValue = 0.f;
 	float aux = 0.f;
-
 	void OnStart() override {
+		scoreValue = 2;
 
 		healthPoints = 1;
 
@@ -703,7 +735,7 @@ public:
 			explosion* boom = new explosion();
 			boom->position.x = position.x;
 			boom->position.y = position.y;
-			engine.getLevel().addObject(boom);
+			engine.getLevel()->addObject(boom);
 
 			if (missile* missileContact = dynamic_cast<missile*>(&contact)) {
 
@@ -748,7 +780,7 @@ public:
 					peasent->position.x = position.x + phaseOffset;
 					peasent->position.y = position.y;
 					peasent->phaseOffset = phaseOffset;
-					engine.getLevel().addObject(peasent);
+					engine.getLevel()->addObject(peasent);
 					time = 0;
 					myDroneNumber--;
 				}
@@ -786,7 +818,7 @@ public:
 
 			entity->position.x = getRandomFloat(-290.f, 290.f);
 			entity->position.y = 300.0f;
-			engine.getLevel().addObject(entity);
+			engine.getLevel()->addObject(entity);
 			time = 0;
 		}
 	}
@@ -816,7 +848,7 @@ public:
 			entity->asteroidSize = asteroidSizes[getRandomInt(0, 3)];
 			entity->position.x = getRandomFloat(-280, 280);
 			entity->position.y = 300.f;
-			engine.getLevel().addObject(entity);
+			engine.getLevel()->addObject(entity);
 			time = 0;
 		}
 	}
@@ -843,7 +875,7 @@ public:
 	}bulletOffset;
 
 
-	void TakeShipDamage() {
+	virtual void TakeShipDamage(){
 		if (damageCooldown <= 0)
 		{
 			shipHealth -= 1;
@@ -867,7 +899,7 @@ public:
 				bullet->position.x = position.x + bulletOffset.x;
 				bullet->position.y = position.y + bulletOffset.y;
 				bullet->firePower = firePower;
-				engine.getLevel().addObject(bullet);
+				engine.getLevel()->addObject(bullet);
 				keyPressed = true;
 			}
 		}
@@ -946,7 +978,7 @@ public:
 			boom->position.y = position.y;
 			isInit = false;
 			animation = new Animation("resources/graphics/clone.bmp", 1.f, textureDimentions, false, {19});
-			engine.getLevel().addObject(boom);
+			engine.getLevel()->addObject(boom);
 			TakeShipDamage();
 			contact.Destroy();
 		}
@@ -988,17 +1020,27 @@ public:
 	float damageCooldown = 0;
 	bool onAnimation = false;
 
+	int lives = 3;
+
 	std::vector<companion*> myCompanions;
+
+	PlayerLife* playerLifesUI;
+
+	struct 
+	{
+		float x = 0;
+		float y = 0;
+	}respawnPosition;
 
 	void OnStart() override {
 
 		int textureDimentions[2] = { 7,1 };
 
 
-		shipHealthMax = 20;
-		shipHealth = 20;
+		shipHealthMax = 1;
+		shipHealth = 1;
 		keyPressed = false;
-		firePower = 1;
+		firePower = 0;
 
 		movementSpeed = 200.0f;
 
@@ -1008,11 +1050,17 @@ public:
 		animationState = 0;
 		objectGroup = "player";
 
-		position.x = 0.0f;
-		position.y = -100.0f;
+		respawnPosition.x = position.x = 0.0f;
+		respawnPosition.y = position.y = -100.0f;
 
 		collisionBoxSize.w = collisionBoxSize.h = 64.0f;
 		rotation = *GetGlobalRotation();
+
+		std::vector<int> lifeTiles = { 0, 0, 0, 0, 0 };
+		playerLifesUI = new PlayerLife("resources/graphics/PULife.bmp", 0.15f, 0.17f, -0.9f, -0.75f, true, 1, 1, lives, 1, lifeTiles);
+		playerLifesUI->SetSortingLayer(9);
+		playerLifesUI->UpdateNumberOfLives(lives);
+		engine.getLevel()->addBackground(playerLifesUI);
 	}
 
 	void OnAnimationFinish() override 
@@ -1088,19 +1136,30 @@ public:
 		}
 
 
-		if (shipHealth <= 0 && isGameOver == false) {
-
-			if (myCompanions.size() > 0)
+		if (shipHealth <= 0) {
+			if (lives > 0)
 			{
-				for (int i = myCompanions.size() - 1; i >= 0; i--)
-				{
-					std::cout << "my Companion index: " << i << std::endl;
-					myCompanions[i]->Destroy();
-					myCompanions.erase(myCompanions.begin() + i);
-				}
+				shipHealth = shipHealthMax;
+				lives--;
+				playerLifesUI->UpdateNumberOfLives(lives);
+				position.x = respawnPosition.x;
+				position.y = respawnPosition.y;
 			}
-			isGameOver = true;
-			Destroy();
+			else if (isGameOver == false)
+			{
+				if (myCompanions.size() > 0)
+				{
+					for (int i = myCompanions.size() - 1; i >= 0; i--)
+					{
+						std::cout << "my Companion index: " << i << std::endl;
+						myCompanions[i]->Destroy();
+						myCompanions.erase(myCompanions.begin() + i);
+					}
+				}
+				isGameOver = true;
+				Destroy();
+				playerLifesUI = nullptr;
+			}
 		}
 	}
 
@@ -1128,7 +1187,7 @@ public:
 		{
 			companion* companion1 = new companion(true, false, true);
 			myCompanions.push_back(companion1);
-			engine.getLevel().addObject(companion1);
+			engine.getLevel()->addObject(companion1);
 		}
 	}
 
@@ -1181,7 +1240,7 @@ public:
 				);
 
 			}
-			engine.getLevel().addObject(boom);
+			engine.getLevel()->addObject(boom);
 			TakeShipDamage();
 			//std::cout << "Ship Damaged by " << contact.objectGroup << std::endl;
 			contact.Destroy();
@@ -1234,7 +1293,7 @@ public:
 			dronePack* enemy = new dronePack(true, false, true);
 			enemy->position.x = getRandomFloat(-240.f, 240.f);
 			enemy->position.y = 300.0f;
-			engine.getLevel().addObject(enemy);
+			engine.getLevel()->addObject(enemy);
 			time = 0;
 		}
 	}
@@ -1262,7 +1321,7 @@ public:
 			enemy->SetSortingLayer(3);
 			enemy->position.x = getRandomFloat(-290.f, 290.f);
 			enemy->position.y = 300.0f;
-			engine.getLevel().addObject(enemy);
+			engine.getLevel()->addObject(enemy);
 			time = 0;
 		}
 	}
@@ -1289,32 +1348,9 @@ public:
 			enemy->SetSortingLayer(3);
 			enemy->position.x = -350.0f;
 			enemy->position.y = getRandomFloat(0.f, 205.f);
-			engine.getLevel().addObject(enemy);
+			engine.getLevel()->addObject(enemy);
 			time = 0;
 		}
-	}
-};
-
-class backgroundAssets : public LevelBackground
-{
-public:
-
-	backgroundAssets(std::string filepath, float sizeX, float sizeY, float posX, float posY, bool tile, int rows, int columns, int numTilesX, int numTilesY, std::vector<int> tileIDs)
-		: LevelBackground(filepath, sizeX, sizeY, posX, posY, tile, rows, columns, numTilesX, numTilesY, tileIDs)
-	{
-		// Initialize tiledVertices with default values
-		std::fill(std::begin(tiledVertices), std::end(tiledVertices), 0.0f);
-	}
-
-	void OnUpdate() override
-	{
-		float scrollSpeed = 0.01f;
-		//scrollRect.h += scrollSpeed * engine.deltaTime;
-		// Ensure the scrollRect.h value wraps around to create a continuous scrolling effect
-// 		if (scrollRect.h > 1.0f)
-// 		{
-// 			scrollRect.h -= 1.0f;
-// 		}
 	}
 };
 
@@ -1333,8 +1369,10 @@ int main()
 	gameWindow.windowWidth = 640;
 	gameWindow.windowHeight = 480;
 
-	MyLevel level = MyLevel(10);
-	
+	MyLevel* level = new MyLevel(10);
+	engine.setLevel(level);
+
+
 	LevelBackground* backgroundLayer1 = new LevelBackground("resources/graphics/galaxy2.bmp", 2.f, 2.f, 0.f, 0.f);
 	backgroundLayer1->SetSortingLayer(0);
 
@@ -1343,41 +1381,41 @@ int main()
 	backgroundAssets* backgroundLayer2 = new backgroundAssets("resources/graphics/Blocks.bmp", 0.2f, 0.2f, 0.f, 0.f, true, 64, 16, 5, 7, tileIDs);
 	backgroundLayer2->SetSortingLayer(1);
 
-	level.setLayerSize(2);
-	level.background[0] = backgroundLayer1;
-	level.background[1] = backgroundLayer2;
+
+	level->addBackground(backgroundLayer1);
+	level->addBackground(backgroundLayer2);
 
 	Font* myFont = new Font("resources/graphics/font16x16.bmp", 8, 12);
-	UIScore* myUIScore = new UIScore(myFont, " ", -0.5f, 0.8f, 0.1f, 0.1f);
+	UIScore* myUIScore = new UIScore(myFont, "", -0.9f, 0.85f, 0.05f, 0.05f);
+
+
 	myUIScore->SetSortingLayer(9);
 
-	engine.setLevel(level);
-
-	engine.getLevel().addUIText(myUIScore);
+	engine.getLevel()->addUIText(myUIScore);
 
 	spaceship* ship = new spaceship();
 	ship->SetSortingLayer(4);
-	engine.getLevel().addObject(ship);
+	engine.getLevel()->addObject(ship);
 	
 	rusherSpawner* spawner = new rusherSpawner();
-	engine.getLevel().addObject(spawner);
+	engine.getLevel()->addObject(spawner);
 
 	lonerSpawner* spawner2 = new lonerSpawner();
-	engine.getLevel().addObject(spawner2);
+	engine.getLevel()->addObject(spawner2);
 
 	metalAsteroidSpawner* spawner3 = new metalAsteroidSpawner();
-	engine.getLevel().addObject(spawner3);
+	engine.getLevel()->addObject(spawner3);
 	
 	stoneAsteroidSpawner* spawner4 = new stoneAsteroidSpawner();
-	engine.getLevel().addObject(spawner4);
+	engine.getLevel()->addObject(spawner4);
 	
 	droneSpawner* spawner5 = new droneSpawner();
-	engine.getLevel().addObject(spawner5);
+	engine.getLevel()->addObject(spawner5);
 	
 	powerUpCompanion* p1 = new powerUpCompanion();
 	p1->position.x = 0.f;
 	p1->position.y = 250;
-	engine.getLevel().addObject(p1);
+	engine.getLevel()->addObject(p1);
 
 	engine.Initialize(gameWindow);
 

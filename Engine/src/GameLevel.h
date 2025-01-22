@@ -131,7 +131,7 @@ class GameLevel
 {
 public:
 	std::vector<GameObject*> levelObjects;
-	std::vector<LevelBackground*> background;
+	std::vector<LevelBackground*> levelbackgrounds;
 	std::vector<UIText*> uiTexts;
 
 	std::vector<std::vector<Object*>> listOfLayers;
@@ -139,9 +139,9 @@ public:
 
 	virtual ~GameLevel() = default;
 
-	void setLayerSize(int layerSize);
 	void addObject(GameObject* obj);
 	void addUIText(UIText* uitext);
+	void addBackground(LevelBackground* background);
 
 protected:
 	virtual void SetSortingLayerSize(int i);

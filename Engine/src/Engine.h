@@ -97,13 +97,9 @@ namespace GameEngine {
 	public:
 		float deltaTime = 0.0f;
 
-		void setLevel(GameLevel level);
-		GameLevel& getLevel();
+		void setLevel(GameLevel* level);
+		GameLevel* getLevel() { return mainLevel; };
 		void print(std::string printText);
-
-		void Init(const std::string& path);
-
-		void updateActor();
 
 		void Update();
 		void Initialize(GameWindow windowSettings);
@@ -111,7 +107,7 @@ namespace GameEngine {
 		void sensorListener();
 		void contactListener();
 
-		GameLevel mainLevel;
+		GameLevel* mainLevel;
 		GameWindow windowDisplay;
 		int prevTime = currentTime;
 		int currentTime = 0;
