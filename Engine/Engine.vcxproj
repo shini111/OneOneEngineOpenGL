@@ -141,6 +141,7 @@
     <ClInclude Include="src\Engine.h" />
     <ClInclude Include="src\GameLevel.h" />
     <ClInclude Include="src\GameObjects.h" />
+    <ClInclude Include="src\Objects.h" />
     <ClInclude Include="src\stb_image.h" />
   </ItemGroup>
   <ItemGroup>

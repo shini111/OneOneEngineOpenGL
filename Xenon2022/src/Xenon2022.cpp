@@ -34,6 +34,47 @@ int getRandomInt(int min, int max) {
 	return distribution(engine);
 }
 
+class MyLevel : public GameLevel
+{
+public:
+	MyLevel(int i)
+	{
+		SetSortingLayerSize(i);
+	}
+
+	void AddScore(int i)
+	{
+		myScore += i;
+	}
+
+	int GetScore()
+	{
+		return myScore;
+	}
+
+private:
+	int myScore = 0;
+
+
+};
+
+class UIScore : public UIText
+{
+public:
+	UIScore(Font* font, std::string text, float posX = 0.f, float posY = 0.f, float sizeX = 1.f, float sizeY = 1.f)
+		: UIText(font, text, posX, posY, sizeX, sizeY)
+	{
+	}
+
+	void OnUpdate() override 
+	{
+		MyLevel* m_level = dynamic_cast<MyLevel*>(&engine.getLevel());
+		std::cout<< "My Score: " << m_level->GetScore() << std::endl;
+		//myText = "Hi Score \n" + m_level->GetScore();
+	}
+
+};
+
 class powerUpMissile : public GameObject {
 public:
 	powerUpMissile(bool visibility = true, bool isBullet = true, bool hasSense = true)
@@ -45,7 +86,7 @@ public:
 
 	void OnStart() override {
 		int textureDimentions[2] = { 4,2 };
-
+		SetSortingLayer(6);
 		animation = new Animation("resources/graphics/PUWeapon.bmp", 0.1f, textureDimentions, true, {});
 		objectGroup = "powerUpMissile";
 		collisionBoxSize.w = 32.0f;
@@ -76,7 +117,7 @@ public:
 
 	void OnStart() override {
 		int textureDimentions[2] = { 4,2 };
-
+		SetSortingLayer(6);
 		animation = new Animation("resources/graphics/PUShield.bmp", 0.1f, textureDimentions, true, {});
 		objectGroup = "powerUpHeal";
 
@@ -102,7 +143,7 @@ public:
 
 	void OnStart() override {
 		int textureDimentions[2] = { 4,5 };
-
+		SetSortingLayer(6);
 		animation = new Animation("resources/graphics/clone.bmp", 0.1f, textureDimentions, true, { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15});
 		objectGroup = "powerUpCompanion";
 
@@ -219,6 +260,7 @@ public:
 	void OnStart() override {
 
 		int textureDimentions[2] = { 5,2 };
+		SetSortingLayer(5);
 
 		animation = new Animation("resources/graphics/explode64.bmp", 0.1f, textureDimentions, false, {});
 	}
@@ -243,6 +285,7 @@ public:
 
 	void OnStart() override {
 		int textureDimentions[2] = { 2,3 };
+		SetSortingLayer(5);
 		switch (firePower) {
 		case 0:
 			animation = new Animation("resources/graphics/missile.bmp", 0.1f, textureDimentions, true, { 0 ,1});
@@ -352,7 +395,7 @@ public:
 
 	void OnStart() override {
 		int textureDimentions[2] = { 8,1 };
-
+		SetSortingLayer(5);
 		animation = new Animation("resources/graphics/EnWeap6.bmp", 0.1f, textureDimentions, true, {});
 		objectGroup = "enemyBullet";
 
@@ -447,6 +490,7 @@ public:
 	void OnStart() override {
 
 		int textureDimentions[2] = { 8,2 };
+		SetSortingLayer(6);
 
 		objectGroup = "enemy";
 
@@ -509,7 +553,7 @@ public:
 	void OnStart() override {
 
 		int textureDimentions[2];
-
+		SetSortingLayer(6);
 		objectGroup = "enemy";
 
 		switch (asteroidSize) {
@@ -698,6 +742,7 @@ public:
 				if (time > spawnCooldown) 
 				{
 					drone* peasent = new drone(true, false, true);
+					peasent->SetSortingLayer(3);
 					float phaseOffset = myPeasents.size() * 0.2f;
 					myPeasents.push_back(peasent);
 					peasent->position.x = position.x + phaseOffset;
@@ -849,6 +894,8 @@ public:
 		shipHealth = 3;
 		keyPressed = false;
 		firePower = 0;
+
+		SetSortingLayer(4);
 
 		bulletOffset.x = 0;
 		bulletOffset.y = 9;
@@ -1185,7 +1232,6 @@ public:
 		time += engine.deltaTime;
 		if (time > spawnCooldown) {
 			dronePack* enemy = new dronePack(true, false, true);
-
 			enemy->position.x = getRandomFloat(-240.f, 240.f);
 			enemy->position.y = 300.0f;
 			engine.getLevel().addObject(enemy);
@@ -1213,7 +1259,7 @@ public:
 		time += 1 * engine.deltaTime;
 		if (time > spawnCooldown) {
 			rusher* enemy = new rusher(true, false, true);
-
+			enemy->SetSortingLayer(3);
 			enemy->position.x = getRandomFloat(-290.f, 290.f);
 			enemy->position.y = 300.0f;
 			engine.getLevel().addObject(enemy);
@@ -1240,6 +1286,7 @@ public:
 		time += 1 * engine.deltaTime;
 		if (time > spawnCooldown) {
 			loner* enemy = new loner(true, false, true);
+			enemy->SetSortingLayer(3);
 			enemy->position.x = -350.0f;
 			enemy->position.y = getRandomFloat(0.f, 205.f);
 			engine.getLevel().addObject(enemy);
@@ -1286,30 +1333,30 @@ int main()
 	gameWindow.windowWidth = 640;
 	gameWindow.windowHeight = 480;
 
-	GameLevel level;
-
+	MyLevel level = MyLevel(10);
+	
 	LevelBackground* backgroundLayer1 = new LevelBackground("resources/graphics/galaxy2.bmp", 2.f, 2.f, 0.f, 0.f);
+	backgroundLayer1->SetSortingLayer(0);
 
 	// Create a tiled background layer
-	std::vector<int> tileIDs2 = { 0 };
 	std::vector<int> tileIDs = { 400,401,402,403,404,416,417,418,419,420,432,433,434,435,436,448,449,450,451,452,464,465,466,467,468,480,481,482,483,484,496,497,498,499,500 };
 	backgroundAssets* backgroundLayer2 = new backgroundAssets("resources/graphics/Blocks.bmp", 0.2f, 0.2f, 0.f, 0.f, true, 64, 16, 5, 7, tileIDs);
-	
-	backgroundAssets* firstLayer3 = new backgroundAssets("resources/graphics/MAster96.bmp", 0.1f, 0.1f, 0.0f, 0.f, false, 5,5, 1 , 1, tileIDs2);
+	backgroundLayer2->SetSortingLayer(1);
 
-	level.setLayerSize(3);
+	level.setLayerSize(2);
 	level.background[0] = backgroundLayer1;
-	level.background[1] = firstLayer3;
-	level.background[2] = backgroundLayer2;
+	level.background[1] = backgroundLayer2;
 
 	Font* myFont = new Font("resources/graphics/font16x16.bmp", 8, 12);
-	UIText* myUIText = new UIText(myFont, "Hello \n world!", -0.5f, 0.5f, 0.2f, 0.2f);
+	UIScore* myUIScore = new UIScore(myFont, " ", -0.5f, 0.8f, 0.1f, 0.1f);
+	myUIScore->SetSortingLayer(9);
 
 	engine.setLevel(level);
 
-	engine.getLevel().addUIText(myUIText);
+	engine.getLevel().addUIText(myUIScore);
 
 	spaceship* ship = new spaceship();
+	ship->SetSortingLayer(4);
 	engine.getLevel().addObject(ship);
 	
 	rusherSpawner* spawner = new rusherSpawner();

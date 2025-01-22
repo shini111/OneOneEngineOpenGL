@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include "Animator.h"
+#include "Objects.h"
 
 typedef struct b2BodyId;
 typedef struct b2BodyDef;
@@ -8,7 +9,7 @@ typedef struct b2ShapeId;
 typedef struct b2ShapeDef;
 typedef struct b2Polygon;
 
-class GameObject
+class GameObject : public Object
 {
 public:
 	GameObject(bool visibility, bool isBullet, bool hasSense)
@@ -72,6 +73,8 @@ public:
 	virtual void OnCollideEnter(GameObject& contact) {};
 	void Destroy();
 	virtual void OnDestroyed() {};
+
+	Type getType() const override { return Type::GameObject; }
 
 	std::string objectGroup;
 

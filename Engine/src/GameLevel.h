@@ -2,9 +2,10 @@
 #include <string>
 #include <vector>
 #include "GameObjects.h"
+#include "Objects.h"
 
 
-class LevelBackground
+class LevelBackground : public Object
 {
 public:
 	std::string background_path;
@@ -42,6 +43,8 @@ public:
 
 	virtual void OnUpdate() {
 	};
+
+	Type getType() const override { return Type::LevelBackground; }
 
 	struct{
 		float x;
@@ -85,14 +88,19 @@ public:
 
 };
 
-class UIText
+class UIText : public Object
 {
 public:
 
 	UIText(Font* font, std::string text, float posX = 0.f, float posY = 0.f, float sizeX = 1.f, float sizeY = 1.f)
-		: myFont(font), myText(text), position{ posX, posY }, size{ sizeX, sizeY }
+		: myFont(font), myText(text), position{ posX, posY }, size{ sizeX, sizeY } 
 	{
-	}
+	} 
+
+	virtual void OnUpdate() {
+	};
+
+	Type getType() const override { return Type::UIText; }
 
 	unsigned int m_ShaderProgram;
 	unsigned int m_vao;
@@ -126,9 +134,17 @@ public:
 	std::vector<LevelBackground*> background;
 	std::vector<UIText*> uiTexts;
 
+	std::vector<std::vector<Object*>> listOfLayers;
+	GameLevel() : listOfLayers(8) {};
+
+	virtual ~GameLevel() = default;
+
 	void setLayerSize(int layerSize);
 	void addObject(GameObject* obj);
 	void addUIText(UIText* uitext);
+
+protected:
+	virtual void SetSortingLayerSize(int i);
 
 };
 
