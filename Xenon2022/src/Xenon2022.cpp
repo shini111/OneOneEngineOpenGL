@@ -83,6 +83,43 @@ public:
 	backgroundAssets(std::string filepath, float sizeX, float sizeY, float posX, float posY, bool tile, int rows, int columns, int numTilesX, int numTilesY, std::vector<int> tileIDs)
 		: LevelBackground(filepath, sizeX, sizeY, posX, posY, tile, rows, columns, numTilesX, numTilesY, tileIDs)
 	{}
+
+	float moveSpeed = 50.f;
+	float initialYPos;
+
+	void OnStart() override
+	{
+		initialYPos = scrollRect.h;
+	}
+
+	void OnUpdate() override 
+	{
+		scrollRect.h -= moveSpeed * engine.deltaTime;
+
+		if (scrollRect.h < -500.f) 
+		{
+			resetPosition();
+		}
+	}
+
+	virtual void resetPosition()
+	{
+		scrollRect.h = initialYPos;
+	}
+};
+
+class randomiseBackground : public backgroundAssets
+{
+public:
+	randomiseBackground(std::string filepath, float sizeX, float sizeY, float posX, float posY, bool tile, int rows, int columns, int numTilesX, int numTilesY, std::vector<int> tileIDs)
+		: backgroundAssets(filepath, sizeX, sizeY, posX, posY, tile, rows, columns, numTilesX, numTilesY, tileIDs)
+	{}
+
+	void resetPosition() override 
+	{
+		backgroundAssets::resetPosition();
+		scrollRect.w = getRandomFloat(-310.f, 200.f);
+	}
 };
 
 class PlayerLife : public LevelBackground
@@ -98,10 +135,40 @@ public:
 		numTiles.x = i;
 	}
 	
-	void OnUpdate() override
+};
+
+class PlayerHealth : public LevelBackground
+{
+public:
+	PlayerHealth(std::string filepath, float sizeX, float sizeY, float posX, float posY, bool tile, int rows = 1, int columns = 1, int numTilesX = 3, int numTilesY = 1, std::vector<int> tileIDs = { 0,0,0,0,0 })
+		: LevelBackground(filepath, sizeX, sizeY, posX, posY, tile, rows, columns, numTilesX, numTilesY, tileIDs)
 	{
-		std::cout << "Updating Player Life" << std::endl;
 	}
+	float maxTiles;
+
+	void OnStart() override 
+	{
+		maxTiles = numTiles.x;
+	}
+
+	void UpdateHPBar(float healthPercent)
+	{
+		if (healthPercent > 50.f)
+		{
+			SetColor(0.f, 1.f, 0.f, 1.f);
+		}
+		else if (healthPercent > 25.f)
+		{
+			SetColor(1.f, 1.f, 0.f, 1.f);
+		}
+		else 
+		{
+			SetColor(1.f, 0.f, 0.f, 1.f);
+		}
+		numTiles.x = (maxTiles * healthPercent) / 100.f;
+		std::cout << "Number of max tiles: " << maxTiles << std::endl;
+	}
+
 };
 
 class powerUpMissile : public GameObject {
@@ -859,8 +926,8 @@ public:
 	ally(bool visibility = true, bool isBullet = false, bool hasSense = false)
 		: Pawn(visibility, isBullet, hasSense) {
 	}
-	int shipHealthMax = 5;
-	int shipHealth = 5;
+	float shipHealthMax = 5.f;
+	float shipHealth = 5.f;
 
 	bool keyPressed = false;
 
@@ -883,10 +950,11 @@ public:
 		}
 	}
 
-	void checkDamageCooldown() {
+	virtual void checkDamageCooldown() {
 		if (damageCooldown > 0)
 		{
 			damageCooldown -= 1 * engine.deltaTime;
+			std::cout << "Damage Cooldown: " << damageCooldown << std::endl;
 		}
 		else {
 			damageCooldown = 0;
@@ -907,7 +975,7 @@ public:
 			keyPressed = false;
 		}
 	};
-private:
+protected:
 	float damageCooldownDefault = 1;
 	float damageCooldown = 0;
 };
@@ -1007,7 +1075,7 @@ public:
 		: ally(visibility, isBullet, hasSense) {
 	}
 
-	int textureDimentions[2] = { 7,1 };
+	int textureDimentions[2] = { 7,3 };
 
 	std::string currentAnimation = "";
 	int animationState = 0;
@@ -1025,6 +1093,7 @@ public:
 	std::vector<companion*> myCompanions;
 
 	PlayerLife* playerLifesUI;
+	PlayerHealth* playerHealthUI;
 
 	struct 
 	{
@@ -1034,11 +1103,8 @@ public:
 
 	void OnStart() override {
 
-		int textureDimentions[2] = { 7,1 };
-
-
-		shipHealthMax = 1;
-		shipHealth = 1;
+		shipHealthMax = 10;
+		shipHealth = 10;
 		keyPressed = false;
 		firePower = 0;
 
@@ -1057,16 +1123,30 @@ public:
 		rotation = *GetGlobalRotation();
 
 		std::vector<int> lifeTiles = { 0, 0, 0, 0, 0 };
-		playerLifesUI = new PlayerLife("resources/graphics/PULife.bmp", 0.15f, 0.17f, -0.9f, -0.75f, true, 1, 1, lives, 1, lifeTiles);
+		playerLifesUI = new PlayerLife("resources/graphics/PULife.bmp", 0.15f, 0.17f, -290.f, -160.f, true, 1, 1, lives, 1, lifeTiles);
 		playerLifesUI->SetSortingLayer(9);
 		playerLifesUI->UpdateNumberOfLives(lives);
 		engine.getLevel()->addBackground(playerLifesUI);
+
+		std::vector<int> healthTiles = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+		playerHealthUI = new PlayerHealth("resources/graphics/Blocks.bmp", 0.02f, 0.1f, -305.f, -210.f, true, 64, 16, 20, 1, healthTiles);
+		playerHealthUI->SetSortingLayer(9);
+		//playerHealthUI->UpdateHPBar(100.f);
+		playerHealthUI->SetColor(0.f, 1.f, 0.f, 1.f);
+		engine.getLevel()->addBackground(playerHealthUI);
 	}
 
 	void OnAnimationFinish() override 
 	{
 		onAnimation = false;
 		
+	}
+
+	void UpdateHealthPercent()
+	{
+		float percentHealth = (shipHealth / shipHealthMax) * 100;
+		std::cout << "Percentage Health: " << percentHealth << std::endl;
+		playerHealthUI->UpdateHPBar(percentHealth);
 	}
 
 	void OnUpdate() override {
@@ -1088,23 +1168,37 @@ public:
 			ShootCheck();
 			checkDamageCooldown();
 
+			float moveX = 0.0f;
+			float moveY = 0.0f;
+
 			if (input.IsGamepadButtonPressed(GamepadButton::DPadLeft, false)) {
-				position.x -= movementSpeed * engine.deltaTime;
+				moveX = -1.0f;
 				animationState = 2;
 			}
 			else if (input.IsGamepadButtonPressed(GamepadButton::DPadRight, false)) {
-				position.x += movementSpeed * engine.deltaTime;
+				moveX = 1.0f;
 				animationState = 1;
 			}
 			else {
 				animationState = 0;
 			}
 			if (input.IsGamepadButtonPressed(GamepadButton::DPadUp, false)) {
-				position.y += movementSpeed * engine.deltaTime;
+				moveY = 1.0f;
 			}
 			else if (input.IsGamepadButtonPressed(GamepadButton::DPadDown, false)) {
-				position.y -= movementSpeed * engine.deltaTime;
+				moveY = -1.0f;
 			}
+
+			// Normalize the movement vector if moving diagonally
+			float magnitude = std::sqrt(moveX * moveX + moveY * moveY);
+			if (magnitude > 0.0f) {
+				moveX /= magnitude; // Normalize X
+				moveY /= magnitude; // Normalize Y
+			}
+
+			// Apply the movement
+			position.x += moveX * movementSpeed * engine.deltaTime;
+			position.y += moveY * movementSpeed * engine.deltaTime;
 		}
 
 		if (myCompanions.size() > 0)
@@ -1119,20 +1213,17 @@ public:
 		if (animationState == 1 && currentAnimation != "Right" && onAnimation == false)
 		{
 			currentAnimation = "Right";
-			isInit = false;
-			animation = new Animation("resources/graphics/Ship1.bmp", 0.1f, textureDimentions, false, {4,5,6});
+			animation = new Animation("resources/graphics/Ship2.bmp", 0.1f, textureDimentions, false, {4,5,6});
 		}
 		else if (animationState == 2 && currentAnimation != "Left" && onAnimation == false)
 		{
 			currentAnimation = "Left";
-			isInit = false;
-			animation = new Animation("resources/graphics/Ship1.bmp", 0.1f, textureDimentions, false, { 2,1,0 });
+			animation = new Animation("resources/graphics/Ship2.bmp", 0.1f, textureDimentions, false, { 2,1,0 });
 		}
 		else if (animationState == 0 && currentAnimation != "Idle" && onAnimation == false)
 		{
 			currentAnimation = "Idle";
-			isInit = false;
-			animation = new Animation("resources/graphics/Ship1.bmp", 0.1f, textureDimentions, false, {3});
+			animation = new Animation("resources/graphics/Ship2.bmp", 0.1f, textureDimentions, false, {3});
 		}
 
 
@@ -1142,6 +1233,7 @@ public:
 				shipHealth = shipHealthMax;
 				lives--;
 				playerLifesUI->UpdateNumberOfLives(lives);
+				UpdateHealthPercent();
 				position.x = respawnPosition.x;
 				position.y = respawnPosition.y;
 			}
@@ -1167,6 +1259,7 @@ public:
 		int healAmount = 2;
 
 		shipHealth += healAmount;
+		UpdateHealthPercent();
 
 		if (shipHealth > shipHealthMax) {
 			shipHealth = shipHealthMax;
@@ -1192,65 +1285,22 @@ public:
 	}
 
 	void OnCollideEnter(GameObject& contact) override {
-
-		int textureDimentions2[2] = { 7,3 };
-
 		
 		if (contact.objectGroup == "enemyBullet") {
 			explosion* boom = new explosion();
 			boom->position.x = position.x;
 			boom->position.y = position.y;
-			if (animationState == 1 && currentAnimation != "Right")
-			{
-				currentAnimation = "Up";
-				isInit = false;
-				onAnimation = true;
-				animation = new Animation("resources/graphics/Ship2.bmp", 0.1f, textureDimentions2, false,
-					{
-					4,5,6, 4,5,6, 4,5,6,
-					11,12,13, 11,12,13, 11,12,13,
-					18,19,20,18,19,20,18,19,20
-					}
-				);
 
-			}
-			else if (animationState == 2 && currentAnimation != "Left")
-			{
-				currentAnimation = "Down";
-				isInit = false;
-				onAnimation = true;
-				animation = new Animation("resources/graphics/Ship2.bmp", 0.1f, textureDimentions2, false,
-					{
-					0,1,2, 0,1,2,0,1,2,
-					9,8,7, 9,8,7,9,8,7,
-					16,15,14, 16,15,14,16,15,14
-					}
-				);
-
-			}
-			else if (animationState == 0 && currentAnimation != "Idle")
-			{
-				currentAnimation = "Idle";
-				isInit = false;
-				onAnimation = true;
-				animation = new Animation("resources/graphics/Ship2.bmp", 0.1f, textureDimentions2, false,
-					{
-						3, 10, 17,3, 10, 17,3, 10, 17
-					}
-				);
-
-			}
 			engine.getLevel()->addObject(boom);
 			TakeShipDamage();
-			//std::cout << "Ship Damaged by " << contact.objectGroup << std::endl;
+
 			contact.Destroy();
 		}
 
 		if (contact.objectGroup == "enemy") {
-			animation = new Animation("resources/graphics/Ship2.bmp", 0.1f, textureDimentions, false, { 3, 10, 17,3, 10, 17,3, 10, 17 });
 
 			TakeShipDamage();
-			//std::cout << "Ship Damaged by " << contact.objectGroup << std::endl;
+
 		}
 		
 		if (contact.objectGroup == "powerUpMissile") {
@@ -1267,6 +1317,33 @@ public:
 		if (contact.objectGroup == "powerUpHeal") {
 			HealShip();
 			contact.Destroy();
+		}
+	}
+
+	void checkDamageCooldown() override
+	{
+		if (damageCooldown > 0)
+		{
+			damageCooldown -= 1 * engine.deltaTime;
+		}
+		else {
+			damageCooldown = 0;
+		}
+	}
+
+	void TakeShipDamage() override {
+
+		if (damageCooldown <= 0)
+		{
+			shipHealth -= 1;
+			damageCooldown = damageCooldownDefault;
+
+			UpdateHealthPercent();
+
+			int myFrame = animation->currentFrame;
+			onAnimation = true;
+			animation = new Animation("resources/graphics/Ship2.bmp", 0.1f, textureDimentions, false,
+				{ myFrame + 7 , myFrame, myFrame + 7, myFrame});
 		}
 	}
 
@@ -1373,17 +1450,34 @@ int main()
 	engine.setLevel(level);
 
 
-	LevelBackground* backgroundLayer1 = new LevelBackground("resources/graphics/galaxy2.bmp", 2.f, 2.f, 0.f, 0.f);
-	backgroundLayer1->SetSortingLayer(0);
+	LevelBackground* baseBackground = new LevelBackground("resources/graphics/galaxy2.bmp", 2.f, 2.f, 0.f, 0.f);
+	baseBackground->SetSortingLayer(0);
 
 	// Create a tiled background layer
 	std::vector<int> tileIDs = { 400,401,402,403,404,416,417,418,419,420,432,433,434,435,436,448,449,450,451,452,464,465,466,467,468,480,481,482,483,484,496,497,498,499,500 };
-	backgroundAssets* backgroundLayer2 = new backgroundAssets("resources/graphics/Blocks.bmp", 0.2f, 0.2f, 0.f, 0.f, true, 64, 16, 5, 7, tileIDs);
-	backgroundLayer2->SetSortingLayer(1);
+	backgroundAssets* backgroundAsset = new backgroundAssets("resources/graphics/Blocks.bmp", 0.15f, 0.15f, 0.f, 500.f, true, 64, 16, 5, 7, tileIDs);
+	backgroundAsset->SetSortingLayer(1);
+
+	std::vector<int> tileIDs2 = { 768,769,770,771,772,773,784,785,786,787,788,789,800,801,802,803,804,805 };
+	backgroundAssets* backgroundAsset2 = new backgroundAssets("resources/graphics/Blocks.bmp", 0.15f, 0.15f, -310.f, 750.f, true, 64, 16, 6, 3, tileIDs2);
+	backgroundAsset2->SetSortingLayer(1);
+	
+	std::vector<int> tileIDs3 = { 591, 636,637,591,651,652,653,654,667,668,669,670,683,684,685,686,699,700,701,702,591,716,717,591,591,732,733,591 };
+	backgroundAssets* backgroundAsset3 = new backgroundAssets("resources/graphics/Blocks.bmp", 0.15f, 0.15f, 100.f, 600.f, true, 64, 16, 4, 7, tileIDs3);
+	backgroundAsset3->SetSortingLayer(1);
+	
+	
+	
+	
+	//std::vector<int> tileIDs0 = { 591, 636,637,591,651,652,653,654,667,668,669,670,683,684,685,686,699,700,701,702,591,716,717,591,591,732,733,591 };
+	//backgroundAssets* backgroundAsset0 = new backgroundAssets("resources/graphics/Blocks.bmp", 0.15f, 0.15f, 100.f, 600.f, true, 64, 16, 4, 7, tileIDs3);
+	//backgroundAsset3->SetSortingLayer(1);
 
 
-	level->addBackground(backgroundLayer1);
-	level->addBackground(backgroundLayer2);
+	level->addBackground(baseBackground);
+	level->addBackground(backgroundAsset);
+	level->addBackground(backgroundAsset2);
+	level->addBackground(backgroundAsset3);
 
 	Font* myFont = new Font("resources/graphics/font16x16.bmp", 8, 12);
 	UIScore* myUIScore = new UIScore(myFont, "", -0.9f, 0.85f, 0.05f, 0.05f);

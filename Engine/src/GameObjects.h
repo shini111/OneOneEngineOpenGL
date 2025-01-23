@@ -45,6 +45,23 @@ public:
 
 	Animation* animation;
 
+	void SetColor(float r, float g, float b, float a)
+	{
+		colorChange.r = r;
+		colorChange.g = g;
+		colorChange.b = b;
+		colorChange.a = a;
+	}
+
+	struct
+	{
+		float r = 0.f;
+		float g = 0.f;
+		float b = 0.f;
+		float a = 0.f;
+
+	}colorChange;
+
 	struct {
 		float x = 0.0f;
 		float y = 0.0f;

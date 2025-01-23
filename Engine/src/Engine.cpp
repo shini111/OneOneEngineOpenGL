@@ -119,19 +119,7 @@ enum CharEnum {
 	RIGHT_CURLY = 93,
 	UNKNOWN = 94
 };
-// 	std::vector<char> chars;
-// 	for (char c : str) {
-// 		chars.push_back(c);
-// 	}
-// 
-// 	std::cout << "Isolated characters: ";
-// 	for (char c : chars) {
-// 		std::cout << c << ' ';
-// 	}
-// 	std::cout << std::endl;
-// 
-// 
-// 	return chars;
+
 
 
 std::vector<char> isolateChars(const std::string& str) {
@@ -139,19 +127,6 @@ std::vector<char> isolateChars(const std::string& str) {
 	for (char c : str) {
 		chars.push_back(c);
 	}
-// 
-// 	// Print all isolated characters
-// 	std::cout << "Isolated characters: ";
-// 	for (char c : chars) {
-// 		if (c == '\n') {
-// 			std::cout << "\\n" << ' ';
-// 		}
-// 		else {
-// 			std::cout << c << ' ';
-// 		}
-// 	}
-// 	std::cout << std::endl;
-
 	return chars;
 }
 
@@ -358,11 +333,11 @@ namespace GameEngine {
 	};
 
 	float m_Vertices[] = {
-		// positions         // colors           // texture coords
-		0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   1.f, 1.f,   // top right
-		0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   1.f , 0.0f,   // bottom right
-	   -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   0.0f, 0.0f,   // bottom left
-	   -0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   0.0f, 1.f    // top left
+		// positions         // colors           // texture coords 
+		0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   1.f, 1.f,             // top right
+		0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   1.f , 0.0f,           // bottom right
+	   -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   0.0f, 0.0f,           // bottom left
+	   -0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   0.0f, 1.f             // top left
 	};
 
 
@@ -561,24 +536,24 @@ namespace GameEngine {
 									// Vertex Shader
 
 									const char* vertexShaderSource = R"glsl(
-				#version 330 core
+											#version 330 core
 
-				in vec3 position;
-				in vec3 color;
-				in vec2 texCoord;
+											in vec3 position;
+											in vec3 color;
+											in vec2 texCoord;
 
-				out vec3 Color;
-				out vec2 TexCoord;
+											out vec3 Color;
+											out vec2 TexCoord;
 
-				uniform mat4 model;
+											uniform mat4 model;
 
-				void main()
-				{
-					Color = color;
-					TexCoord = texCoord;
-					gl_Position = model * vec4(position, 1.0);
-				}
-			)glsl";
+											void main()
+											{
+												Color = color;
+												TexCoord = texCoord;
+												gl_Position = model * vec4(position, 1.0);
+											}
+										)glsl";
 
 									GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
 									glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
@@ -588,24 +563,32 @@ namespace GameEngine {
 									//char infoLog[512];
 									glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
 
+									if (!success)
+									{
+										GLchar* infoLog = new GLchar();
+										glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+										std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+									}
+
 									// Fragment Shader
 
 									const char* fragmentShaderSource = R"glsl(
-				#version 330 core
-				in vec3 Color;
-				in vec2 TexCoord;
+											#version 330 core
+											in vec3 Color;
+											in vec2 TexCoord;
+											
+											out vec4 outColor;
 
-				out vec4 outColor;
+											uniform sampler2D ourTexture;
+											uniform vec4 ColorChange;
 
-				uniform sampler2D ourTexture;
+											void main()
+											{
+												vec4 colTex1 = texture(ourTexture, TexCoord);
+												if(colTex1 == vec4(1, 0, 1, 1)) discard;
 
-				void main()
-				{
-					vec4 colTex1 = texture(ourTexture, TexCoord);
-					if(colTex1 == vec4(1, 0, 1, 1)) discard;
-
-					outColor = colTex1;
-				})glsl";
+												outColor = colTex1 + ColorChange;
+											})glsl";
 
 									GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 									glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
@@ -615,8 +598,9 @@ namespace GameEngine {
 
 									if (!success)
 									{
-										//glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-										//std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+										GLchar* infoLog = new GLchar();
+										glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+										std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
 									}
 
 									(it)->m_ShaderProgram = glCreateProgram();
@@ -628,10 +612,12 @@ namespace GameEngine {
 									glDeleteShader(vertexShader);
 									glDeleteShader(fragmentShader);
 
-									glGetProgramiv(m_ShaderProgram, GL_LINK_STATUS, &success);
-									if (!success) {
-										//glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-										//std::cout << "ERROR::SHADER::PROGRAM::COMPILATION_FAILED\n" << infoLog << std::endl;
+									glGetProgramiv((it)->m_ShaderProgram, GL_LINK_STATUS, &success);
+									if (!success) 
+									{
+										GLchar* infoLog = new GLchar();
+										glGetProgramInfoLog((it)->m_ShaderProgram, 512, NULL, infoLog);
+										std::cout << "ERROR::SHADER::PROGRAM::COMPILATION_FAILED\n" << infoLog << std::endl;
 									}
 
 									// 3. then set our vertex attributes pointers
@@ -646,6 +632,7 @@ namespace GameEngine {
 									GLint texCoordAttrib = glGetAttribLocation((it)->m_ShaderProgram, "texCoord");
 									glEnableVertexAttribArray(texCoordAttrib);
 									glVertexAttribPointer(texCoordAttrib, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+
 
 									glGenTextures(1, &(it)->m_Texture);
 									glBindTexture(GL_TEXTURE_2D, (it)->m_Texture);
@@ -688,10 +675,16 @@ namespace GameEngine {
 								{
 									glUseProgram((it)->m_ShaderProgram);
 
+									glm::vec4 color = glm::vec4((it)->colorChange.r, (it)->colorChange.g, (it)->colorChange.b, (it)->colorChange.a);
+
+									GLuint colorChangeLocation;
+									colorChangeLocation = glGetUniformLocation((it)->m_ShaderProgram, "ColorChange");
+									glUniform4fv(colorChangeLocation, 1, glm::value_ptr(color));
+
 									glm::mat4 model = glm::mat4(1.0f); // Identity matrix
 									model = glm::translate(model, glm::vec3((it)->scrollRect.w, (it)->scrollRect.h, 1.0f)); // Apply translation
 									model = glm::scale(model, glm::vec3((it)->size.x, (it)->size.y, 1.0f)); // Apply scaling
-
+									
 									// Pass the model matrix to the shader
 									GLuint modelLoc = glGetUniformLocation((it)->m_ShaderProgram, "model");
 									glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
@@ -710,14 +703,13 @@ namespace GameEngine {
 							{
 								if (!(it)->isInit)
 								{
-									std::cout << "Initialize tiled background" << std::endl;
 
 									float tempVertices[] = {
-										// positions         // colors           // texture coords
-										0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   1.f / ((float)(it)->tileMapSize.columns),  1.f,   // top right
-										0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   1.f / ((float)(it)->tileMapSize.columns),  1.f - (1.f / ((float)(it)->tileMapSize.rows)),   // bottom right
-									   -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   0.0f,											1.f - (1.f / ((float)(it)->tileMapSize.rows)),   // bottom left
-									   -0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   0.0f,											1.f    // top left
+										// positions         // colors           // texture coords                                                                        
+										0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   1.f / ((float)(it)->tileMapSize.columns),  1.f,	                                      // top right
+										0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   1.f / ((float)(it)->tileMapSize.columns),  1.f - (1.f / ((float)(it)->tileMapSize.rows)),// bottom right
+									   -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   0.0f,										1.f - (1.f / ((float)(it)->tileMapSize.rows)),// bottom left
+									   -0.5f,  0.5f, 0.0f,   0.0f, 0.0f, 0.0f,   0.0f,										1.f     							          // top left
 									};
 
 									std::copy(std::begin(tempVertices), std::end(tempVertices), std::begin((it)->tiledVertices));
@@ -739,20 +731,24 @@ namespace GameEngine {
 
 									// Vertex Shader
 									const char* vertexShaderSource = R"glsl(
-                    #version 330 core
-                    in vec3 position;
-                    in vec3 color;
-                    in vec2 texCoord;
-                    out vec3 Color;
-                    out vec2 TexCoord;
-                    uniform mat4 model;
-                    void main()
-                    {
-                        Color = color;
-                        TexCoord = texCoord;
-                        gl_Position = model * vec4(position, 1.0);
-                    }
-                )glsl";
+											#version 330 core
+
+											in vec3 position;
+											in vec3 color;
+											in vec2 texCoord;
+
+											out vec3 Color;
+											out vec2 TexCoord;
+	
+											uniform mat4 model;
+
+											void main()
+											{
+												Color = color;
+												TexCoord = texCoord;
+												gl_Position = model * vec4(position, 1.0);
+											}
+										)glsl";
 
 									GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
 									glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
@@ -763,18 +759,22 @@ namespace GameEngine {
 
 									// Fragment Shader
 									const char* fragmentShaderSource = R"glsl(
-                    #version 330 core
-                    in vec3 Color;
-                    in vec2 TexCoord;
-                    out vec4 outColor;
-                    uniform sampler2D ourTexture;
-                    void main()
-                    {
-                        vec4 colTex1 = texture(ourTexture, TexCoord);
-                        if(colTex1 == vec4(1, 0, 1, 1)) discard;
-                        outColor = colTex1;
-                    }
-                )glsl";
+											#version 330 core
+											in vec3 Color;
+											in vec2 TexCoord;
+											uniform vec4 ColorChange;
+
+											out vec4 outColor;
+
+											uniform sampler2D ourTexture;
+
+											void main()
+											{
+												vec4 colTex1 = texture(ourTexture, TexCoord);
+												if(colTex1 == vec4(1, 0, 1, 1)) discard;
+
+												outColor = colTex1 + ColorChange;
+											})glsl";
 
 									GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 									glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
@@ -848,7 +848,7 @@ namespace GameEngine {
 										for (int x = 0; x < (it)->numTiles.x; ++x)
 										{
 											int tileIndex = y * (it)->numTiles.x + x;
-											//std::cout << "Tile Index: " << tileIndex << std::endl;
+
 											if (tileIndex >= (it)->tileIDs.size())
 												continue;
 
@@ -877,8 +877,14 @@ namespace GameEngine {
 											glBindBuffer(GL_ARRAY_BUFFER, (it)->m_vbo);
 											glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof((it)->tiledVertices), (it)->tiledVertices);
 
+											glm::vec4 color = glm::vec4((it)->colorChange.r, (it)->colorChange.g, (it)->colorChange.b, (it)->colorChange.a);
+
+											GLuint colorChangeLocation;
+											colorChangeLocation = glGetUniformLocation((it)->m_ShaderProgram, "ColorChange");
+											glUniform4fv(colorChangeLocation, 1, glm::value_ptr(color));
+
 											glm::mat4 model = glm::mat4(1.0f); // Identity matrix
-											model = glm::translate(model, glm::vec3((it)->scrollRect.w + x * (it)->size.x, (it)->scrollRect.h - y * (it)->size.y, 1.0f)); // Apply translation
+											model = glm::translate(model, glm::vec3(((it)->scrollRect.w / 320.f) + x * (it)->size.x, ((it)->scrollRect.h / 240.f) - y * (it)->size.y, 1.0f)); // Apply translation
 											model = glm::scale(model, glm::vec3((it)->size.x, (it)->size.y, 1.0f)); // Apply scaling
 
 											// Pass the model matrix to the shader
@@ -971,20 +977,21 @@ namespace GameEngine {
 
 											const char* fragmentShaderSource = R"glsl(
 												#version 330 core
-												in vec3 Color;
-												in vec2 TexCoord;
+											in vec3 Color;
+											in vec2 TexCoord;
+											uniform vec4 ColorChange;
 
-												out vec4 outColor;
+											out vec4 outColor;
 
-												uniform sampler2D ourTexture;
+											uniform sampler2D ourTexture;
 
-												void main()
-												{
-													vec4 colTex1 = texture(ourTexture, TexCoord);
-													if(colTex1 == vec4(1, 0, 1, 1)) discard;
+											void main()
+											{
+												vec4 colTex1 = texture(ourTexture, TexCoord);
+												if(colTex1 == vec4(1, 0, 1, 1)) discard;
 
-													outColor = colTex1;
-												})glsl";
+												outColor = colTex1 + ColorChange;
+											})glsl";
 
 											GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 											glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
@@ -1159,7 +1166,11 @@ namespace GameEngine {
 
 											}
 
+											glm::vec4 color = glm::vec4((it)->colorChange.r, (it)->colorChange.g, (it)->colorChange.b, (it)->colorChange.a);
 
+											GLuint colorChangeLocation;
+											colorChangeLocation = glGetUniformLocation((it)->m_ShaderProgram, "ColorChange");
+											glUniform4fv(colorChangeLocation, 1, glm::value_ptr(color));
 
 											glm::mat4 model = glm::mat4(1.0f); // Identity matrix
 											model = glm::translate(model, glm::vec3((it)->position.x / 320.f, (it)->position.y / 240.f, 1.0f)); // Apply translation
@@ -1193,7 +1204,6 @@ namespace GameEngine {
 						{
 							if (!targetUI->isInit)
 							{
-								std::cout << "Initialize tiled font" << std::endl;
 
 								float tempVertices[] = {
 									// positions         // colors           // texture coords
@@ -1351,7 +1361,7 @@ namespace GameEngine {
 											continue;
 										letterwritten++;
 										int tileID = letterIDs[tileIndex];
-										std::cout << "-" << tileIndex;
+
 										int column = tileID % targetUI->myFont->bitMapSize.columns;
 										int row = tileID / targetUI->myFont->bitMapSize.columns;
 
@@ -1388,7 +1398,7 @@ namespace GameEngine {
 										glBindTexture(GL_TEXTURE_2D, targetUI->m_Texture);
 										glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 									}
-									std::cout << std::endl << std::endl;
+
 								}
 							}
 						}
@@ -1527,15 +1537,15 @@ namespace GameEngine {
 			if (myUserData)
 			{
 				GameObject* m = static_cast<GameObject*>(myUserData);
-				//std::cout << m->objectGroup << std::endl;
+
 				void* myUserData2 = b2Shape_GetUserData(beginTouch->shapeIdB);
-				//std::cout << "Collision A: " << m->objectGroup << " " << m->collisionBoxSize.w << " " << m->collisionBoxSize.h;
+
 				
 				if (myUserData2)
 				{
 					GameObject* m2 = static_cast<GameObject*>(myUserData2);
 					m->OnCollideEnter(*m2);
-					//std::cout << " Collision B: " << m2->objectGroup << " " << m2->collisionBoxSize.w << " " << m2->collisionBoxSize.h << std::endl;
+
 				}
 			}
 		}
@@ -1562,6 +1572,7 @@ void GameLevel::addUIText(UIText* uiText)
 void GameLevel::addBackground(LevelBackground* background)
 {
 	levelbackgrounds.push_back(background);
+	background->OnStart();
 }
 
 

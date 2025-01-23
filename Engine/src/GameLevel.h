@@ -22,7 +22,7 @@ public:
 		int rows;
 		int columns;
 	}tileMapSize;
-	float tiledVertices[32];
+	float tiledVertices[48];
 	std::vector<int> tileIDs; // New member to store tile IDs
 	struct
 	{
@@ -32,17 +32,28 @@ public:
 	
 
 	LevelBackground()
-		: background_path(""), size{ 1.f, 1.f }, scrollRect{ 0.f, 0.f, 0.f, 0.f }, isTiled(false), tileMapSize{ 1, 1 }, numTiles{ 1, 1 }
+		: background_path(""), size{ 1.f, 1.f }, scrollRect{ 0.f, 0.f}, isTiled(false), tileMapSize{ 1, 1 }, numTiles{ 1, 1 }
 	{
 	}
 
 	LevelBackground(std::string filepath, float sizeX = 1.f, float sizeY = 1.f, float posX = 0.f, float posY = 0.f, bool tile = false, int rows = 1, int columns = 1, int numTilesX = 1, int numTilesY = 1, std::vector<int> tileIDs = {})
-		: background_path(filepath), size{ sizeX, sizeY }, scrollRect{ posX, posY, 0.0f, 0.0f }, isTiled(tile), tileMapSize{ rows, columns }, numTiles{ numTilesX, numTilesY }, tileIDs(tileIDs)
+		: background_path(filepath), size{ sizeX, sizeY }, scrollRect{ posX, posY}, isTiled(tile), tileMapSize{ rows, columns }, numTiles{ numTilesX, numTilesY }, tileIDs(tileIDs)
 	{
 	}
 
 	virtual void OnUpdate() {
 	};
+
+	virtual void OnStart() {
+	};
+
+	void SetColor(float r, float g, float b, float a)
+	{
+		colorChange.r = r;
+		colorChange.g = g;
+		colorChange.b = b;
+		colorChange.a = a;
+	}
 
 	Type getType() const override { return Type::LevelBackground; }
 
@@ -62,10 +73,16 @@ public:
 	{
 		float w;
 		float h;
-
-		float w2 = 0.0f;
-		float h2 = 0.0f;
 	}scrollRect;
+	
+	struct
+	{
+		float r = 0.f;
+		float g = 0.f;
+		float b = 0.f;
+		float a = 0.f;
+
+	}colorChange;
 
 	private:
 		void Init();
