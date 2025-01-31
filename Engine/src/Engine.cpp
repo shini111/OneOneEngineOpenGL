@@ -883,8 +883,27 @@ namespace GameEngine {
 											colorChangeLocation = glGetUniformLocation((it)->m_ShaderProgram, "ColorChange");
 											glUniform4fv(colorChangeLocation, 1, glm::value_ptr(color));
 
+											float centerX = 0.f;
+											float centerY = 0.f;
+
+											if ((it)->numTiles.y == 1)
+											{
+												
+											}
+											else
+											{
+												// Calculate total object dimensions
+												float totalWidth = (it)->numTiles.x * (it)->size.x;
+												float totalHeight = (it)->numTiles.y * (it)->size.y;
+
+												// Center the object by offsetting by half the total dimensions
+												centerX = -(totalWidth / 2.0f) + ((it)->size.x / 2);
+												centerY = (totalHeight / 2.0f) - ((it)->size.y / 2);
+											}
+											
+
 											glm::mat4 model = glm::mat4(1.0f); // Identity matrix
-											model = glm::translate(model, glm::vec3(((it)->scrollRect.w / 320.f) + x * (it)->size.x, ((it)->scrollRect.h / 240.f) - y * (it)->size.y, 1.0f)); // Apply translation
+											model = glm::translate(model, glm::vec3((((it)->scrollRect.w / 320.f) + x * (it)->size.x) + centerX, (((it)->scrollRect.h / 240.f) - y * (it)->size.y) + centerY, 1.0f)); // Apply translation
 											model = glm::scale(model, glm::vec3((it)->size.x, (it)->size.y, 1.0f)); // Apply scaling
 
 											// Pass the model matrix to the shader
