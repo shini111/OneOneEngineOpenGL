@@ -2,29 +2,6 @@
 #include <string>
 #include <vector>
 
-class AnimationCoord
-{
-public:
-
-	struct
-	{
-		int x = 0;
-		int y = 0;
-	}coordPosition;
-
-
-	AnimationCoord() = default;
-
-	AnimationCoord(int xParam, int yParam) {
-
-		coordPosition.x = xParam;
-		coordPosition.y = yParam;
-
-	}
-
-
-};
-
 
 class Animation {
 public: 

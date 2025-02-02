@@ -135,7 +135,65 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\lonerSpawner.cpp" />
+    <ClCompile Include="src\rusherSpawner.cpp" />
+    <ClCompile Include="src\droneSpawner.cpp" />
+    <ClCompile Include="src\spaceship.cpp" />
+    <ClCompile Include="src\companion.cpp" />
+    <ClCompile Include="src\ally.cpp" />
+    <ClCompile Include="src\metalAsteroidSpawner.cpp" />
+    <ClCompile Include="src\dronePack.cpp" />
+    <ClCompile Include="src\drone.cpp" />
+    <ClCompile Include="src\metalAsteroid.cpp" />
+    <ClCompile Include="src\loner.cpp" />
+    <ClCompile Include="src\enemyProjectile.cpp" />
+    <ClCompile Include="src\rusher.cpp" />
+    <ClCompile Include="src\Missile.cpp" />
+    <ClCompile Include="src\Explosion.cpp" />
+    <ClCompile Include="src\Enemy.cpp" />
+    <ClCompile Include="src\powerUpCompanion.cpp" />
+    <ClCompile Include="src\powerUpHeal.cpp" />
+    <ClCompile Include="src\powerUpMissile.cpp" />
+    <ClCompile Include="src\PlayerHealth.cpp" />
+    <ClCompile Include="src\PlayerLife.cpp" />
+    <ClCompile Include="src\shiftingBackground.cpp" />
+    <ClCompile Include="src\backgroundAssets.cpp" />
+    <ClCompile Include="src\InfiniteScrollerLevel.cpp" />
+    <ClCompile Include="src\Toolbox.cpp" />
     <ClCompile Include="src\Xenon2022.cpp" />
+    <ClCompile Include="src\UIScore.cpp" />
+    <ClCompile Include="src\stoneAsteroid.cpp" />
+    <ClCompile Include="src\stoneAsteroidSpawner.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\lonerSpawner.h" />
+    <ClInclude Include="src\rusherSpawner.h" />
+    <ClInclude Include="src\droneSpawner.h" />
+    <ClInclude Include="src\spaceship.h" />
+    <ClInclude Include="src\companion.h" />
+    <ClInclude Include="src\ally.h" />
+    <ClInclude Include="src\metalAsteroidSpawner.h" />
+    <ClInclude Include="src\dronePack.h" />
+    <ClInclude Include="src\drone.h" />
+    <ClInclude Include="src\metalAsteroid.h" />
+    <ClInclude Include="src\loner.h" />
+    <ClInclude Include="src\enemyProjectile.h" />
+    <ClInclude Include="src\rusher.h" />
+    <ClInclude Include="src\Missile.h" />
+    <ClInclude Include="src\Explosion.h" />
+    <ClInclude Include="src\Enemy.h" />
+    <ClInclude Include="src\powerUpCompanion.h" />
+    <ClInclude Include="src\powerUpHeal.h" />
+    <ClInclude Include="src\powerUpMissile.h" />
+    <ClInclude Include="src\PlayerHealth.h" />
+    <ClInclude Include="src\PlayerLife.h" />
+    <ClInclude Include="src\shiftingBackground.h" />
+    <ClInclude Include="src\backgroundAssets.h" />
+    <ClInclude Include="src\InfiniteScrollerLevel.h" />
+    <ClInclude Include="src\ToolBox.h" />
+    <ClInclude Include="src\UIScore.h" />
+    <ClInclude Include="src\stoneAsteroid.h" />
+    <ClInclude Include="src\stoneAsteroidSpawner.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

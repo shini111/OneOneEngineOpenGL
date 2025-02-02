@@ -5,6 +5,10 @@ class Object
 {
 public:
 
+	virtual void OnStart() {};
+	virtual void OnUpdate(float deltaTime) {};
+	virtual void OnDestroyed(){};
+
 	Object(int sLayer = 0)
 		:sortingLayer(sLayer)
 	{

@@ -1,6 +1,6 @@
 #pragma once
 #include <string>
-#include "Animator.h"
+#include "Animation.h"
 #include "Objects.h"
 
 typedef struct b2BodyId;
@@ -60,7 +60,6 @@ public:
 		float g = 0.f;
 		float b = 0.f;
 		float a = 0.f;
-
 	}colorChange;
 
 	struct {
@@ -73,12 +72,6 @@ public:
 		float h = 32.0f;
 	}collisionBoxSize;
 
-	struct {
-		int r = 255;
-		int g = 255;
-		int b = 255;
-	}modulate;
-
 	float rotation = 0;
 
 	bool visible = true;
@@ -86,12 +79,12 @@ public:
 	bool hasSense = false;
 	bool isContact = false;
 
-	virtual void OnStart() {};
-	virtual void OnUpdate() {};
+	void OnStart() override{};
+	void OnUpdate(float deltaTime) override{};
 	virtual void OnAnimationFinish() {};
 	virtual void OnCollideEnter(GameObject& contact) {};
 	void Destroy();
-	virtual void OnDestroyed() {};
+	void OnDestroyed() override{};
 
 	Type getType() const override { return Type::GameObject; }
 
@@ -106,13 +99,4 @@ public:
 
 	bool toBeCreated = true;
 	bool toBeDeleted = false;
-};
-
-class Pawn : public GameObject
-{
-public:
-	Pawn(bool visibility = true, bool isBullet = false, bool hasSense = true)
-		: GameObject(visibility, isBullet, hasSense) {
-	}
-	float movementSpeed = 150.0f;
 };
