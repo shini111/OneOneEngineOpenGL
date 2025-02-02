@@ -1,4 +1,11 @@
 #include "Engine.h"
+#include "MyEngine.h"
+#include "Enemy.h"
+#include "Ally.h"
+#include "Missile.h"
+#include "PowerUps.h"
+#include "MyLevel.h"
+
 #include <random>
 #include <cmath>
 #include <algorithm>
@@ -10,7 +17,8 @@
 
 #undef main
 
-GameEngine::Engine engine;
+MyGameEngine* engine = MyGameEngine::GetInstance();
+
 float globalRotation = 0.0f;
 
 //To use this fuction we just call *GetGlobalRotation() and get the value of the global rotation
@@ -35,30 +43,6 @@ int getRandomInt(int min, int max) {
 	return distribution(engine);
 }
 
-class MyLevel : public GameLevel
-{
-public:
-	MyLevel(int i)
-	{
-		SetSortingLayerSize(i);
-	}
-
-	void AddScore(int i)
-	{
-		myScore += i;
-	}
-
-	int GetScore()
-	{
-		return myScore;
-	}
-
-private:
-	int myScore = 10;
-
-
-};
-
 class UIScore : public UIText
 {
 public:
@@ -69,7 +53,7 @@ public:
 
 	void OnUpdate() override 
 	{
-		std::string aux = std::to_string(dynamic_cast<MyLevel*>(engine.getLevel())->GetScore());
+		std::string aux = std::to_string(dynamic_cast<MyLevel*>(myEngine.GetEngine().getLevel())->GetScore());
 		aux = std::string(10 - aux.length(), '0') + aux;
 		std::string aux2 = "Score: \n";
 		myText = aux2 + aux;
@@ -94,7 +78,7 @@ public:
 
 	void OnUpdate() override 
 	{
-		scrollRect.h -= moveSpeed * engine.deltaTime;
+		scrollRect.h -= moveSpeed * myEngine.GetEngine().deltaTime;
 
 		if (scrollRect.h < -500.f) 
 		{
@@ -173,185 +157,6 @@ public:
 
 };
 
-class powerUpMissile : public GameObject {
-public:
-	powerUpMissile(bool visibility = true, bool isBullet = true, bool hasSense = true)
-		: GameObject(visibility, isBullet, hasSense) {
-	}
-
-	float moveSpeed = 30.0f;
-
-
-	void OnStart() override {
-		int textureDimentions[2] = { 4,2 };
-		SetSortingLayer(6);
-		animation = new Animation("resources/graphics/PUWeapon.bmp", 0.1f, textureDimentions, true, {});
-		objectGroup = "powerUpMissile";
-		collisionBoxSize.w = 32.0f;
-		collisionBoxSize.h = 32.0f;
-
-		rotation = *GetGlobalRotation();
-
-	}
-
-	void OnUpdate() override {
-		position.y -= moveSpeed * engine.deltaTime;
-
-		if (position.y < -280) {
-			Destroy();
-		}
-	}
-
-};
-
-class powerUpHeal : public GameObject {
-public:
-	powerUpHeal(bool visibility = true, bool isBullet = true, bool hasSense = true)
-		: GameObject(visibility, isBullet, hasSense) {
-	}
-
-	float moveSpeed = 30.0f;
-
-
-	void OnStart() override {
-		int textureDimentions[2] = { 4,2 };
-		SetSortingLayer(6);
-		animation = new Animation("resources/graphics/PUShield.bmp", 0.1f, textureDimentions, true, {});
-		objectGroup = "powerUpHeal";
-
-	}
-
-	void OnUpdate() override {
-		position.y -= moveSpeed * engine.deltaTime;
-
-		if (position.y < -280) {
-			Destroy();
-		}
-	}
-
-};
-
-class powerUpCompanion : public GameObject {
-public:
-	powerUpCompanion(bool visibility = true, bool isBullet = true, bool hasSense = true)
-		: GameObject(visibility, isBullet, hasSense) {
-	}
-	float moveSpeed = 30.0f;
-
-
-	void OnStart() override {
-		int textureDimentions[2] = { 4,5 };
-		SetSortingLayer(6);
-		animation = new Animation("resources/graphics/clone.bmp", 0.1f, textureDimentions, true, { 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15});
-		objectGroup = "powerUpCompanion";
-
-	}
-
-	void OnUpdate() override {
-
-		position.y -= moveSpeed * engine.deltaTime;
-
-		if (position.y < -280) {
-			Destroy();
-		}
-	}
-
-};
-
-class Enemy : public GameObject {
-public:
-	Enemy(bool visibility = true, bool isBullet = false, bool hasSense = false)
-		: GameObject(visibility, isBullet, hasSense) {
-	}
-	int scoreValue = 10;
-
-public:
-	int healthPoints = 1;
-	float dropChance = 10.f;
-	void showDamageFeedback() {
-		modulate.r = 255;
-		modulate.g = 0;
-		modulate.b = 0;
-	}
-
-	void hideDamageFeedback() {
-		modulate.r = 255;
-		modulate.g = 255;
-		modulate.b = 255;
-	}
-
-	void checkDamageFeedback() {
-		if (damageFeedbackTimer > 0) {
-			damageFeedbackTimer -= damageFeedbackDuration * damageFeedbackSpeed * engine.deltaTime;
-
-			if (int(damageFeedbackTimer) % 2 == 0) {
-				showDamageFeedback();
-			}
-			else {
-				hideDamageFeedback();
-			}
-
-		}
-		else
-		{
-			hideDamageFeedback();
-			damageFeedbackTimer = 0;
-		}
-	}
-
-	void CreatePowerUp(GameObject* powerUp, float posX, float posY)
-	{
-		powerUp->position.x = posX;
-		powerUp->position.y = posY;
-		engine.getLevel()->addObject(powerUp);
-
-	}
-
-	void TakeDamage(int paramFirePower) {
-		healthPoints -= paramFirePower;
-
-		if (healthPoints <= 0) 
-		{
-			if (getRandomFloat(0.f, 100.f) >= (100.f - dropChance))
-			{
-				switch (getRandomInt(0, 3))
-				{
-				case 0:
-
-					CreatePowerUp(new powerUpHeal(true, true, true), position.x, position.y);
-
-					break;
-				case 1:
-
-					CreatePowerUp(new powerUpMissile(true, true, true), position.x, position.y);
-
-					break;
-				case 2:
-
-					CreatePowerUp(new powerUpCompanion(true, true, true), position.x, position.y);
-
-					break;
-				default:
-					break;
-				}
-			}
-			Destroy();
-			dynamic_cast<MyLevel*>(engine.getLevel())->AddScore(scoreValue);
-		}
-		else {
-
-			showDamageFeedback();
-			damageFeedbackTimer = damageFeedbackDuration;
-
-		}
-	}
-private:
-	float damageFeedbackTimer = 0;
-	float damageFeedbackDuration = 5;
-	float damageFeedbackSpeed = 2;
-
-};
-
 class explosion : public GameObject {
 public:
 	explosion(bool visibility = true, bool isBullet = false, bool hasSense = false)
@@ -369,69 +174,6 @@ public:
 		Destroy();
 	}
 
-};
-
-class missile : public GameObject {
-public:
-
-	missile(bool visibility = true, bool isBullet = false, bool hasSense = true)
-		: GameObject(visibility, isBullet, hasSense) {
-	}
-
-	float moveSpeed = 250.0f;
-
-	int firePower = 0;
-	int missileDamage = 1;
-
-	void OnStart() override {
-		int textureDimentions[2] = { 2,3 };
-		SetSortingLayer(5);
-		switch (firePower) {
-		case 0:
-			animation = new Animation("resources/graphics/missile.bmp", 0.1f, textureDimentions, true, { 0 ,1});
-			break;
-		case 1:
-			animation = new Animation("resources/graphics/missile.bmp", 0.1f, textureDimentions, true, {2,3});
-			break;
-		case 2:
-			animation = new Animation("resources/graphics/missile.bmp", 0.1f, textureDimentions, true, { 4,5 });
-			break;
-		default:
-			animation = new Animation("resources/graphics/missile.bmp", 0.1f, textureDimentions, true, {0, 1});
-			break;
-		}
-
-		collisionBoxSize.w = collisionBoxSize.h = 16.0f;
-
-		objectGroup = "bullet";
-
-		rotation = *GetGlobalRotation();
-	}
-
-	int getMissileDamage() {
-		int damage = 1;
-
-		switch (firePower) {
-		case 0:
-			damage = 1;
-			break;
-		case 1:
-			damage = 2;
-			break;
-		case 2:
-			damage = 4;
-			break;
-		}
-		return damage;
-	}
-
-	void OnUpdate() override {
-		position.y += moveSpeed * engine.deltaTime;
-		
-		if (position.y > 250) {
-			Destroy();
-		}
-	}
 };
 
 class rusher : public Enemy {
@@ -456,7 +198,7 @@ public:
 	}
 
 	void OnUpdate() override {
-		position.y -= moveSpeed * engine.deltaTime;
+		position.y -= moveSpeed * engine->GetEngine().deltaTime;
 
 		if (position.y < -300) {
 			Destroy();
@@ -471,7 +213,7 @@ public:
 			explosion* boom = new explosion();
 			boom->position.x = position.x;
 			boom->position.y = position.y;
-			engine.getLevel()->addObject(boom);
+			engine->GetEngine().getLevel()->addObject(boom);
 
 			if (missile* missileContact = dynamic_cast<missile*>(&contact)) {
 
@@ -503,7 +245,7 @@ public:
 	}
 
 	void OnUpdate() override {
-		position.y -= moveSpeed * engine.deltaTime;
+		position.y -= moveSpeed * myEngine.GetEngine().deltaTime;
 
 		if (position.y < -280.f) {
 			Destroy();
@@ -545,7 +287,7 @@ public:
 
 			boom->position.x = position.x;
 			boom->position.y = position.y;
-			engine.getLevel()->addObject(boom);
+			myEngine.GetEngine().getLevel()->addObject(boom);
 
 			if (missile* missileContact = dynamic_cast<missile*>(&contact)) {
 
@@ -557,17 +299,17 @@ public:
 		}
 	}
 	void OnUpdate() override {
-		time += 1 * engine.deltaTime;
+		time += 1 * myEngine.GetEngine().deltaTime;
 
 		if (time > timeCooldown) {
 			enemyProjectile* enemyProj = new enemyProjectile();
 			enemyProj->position.x = position.x - 10;
 			enemyProj->position.y = position.y - 35;
-			engine.getLevel()->addObject(enemyProj);
+			myEngine.GetEngine().getLevel()->addObject(enemyProj);
 			time = 0;
 		}
 
-		position.x += moveSpeed * engine.deltaTime;
+		position.x += moveSpeed * myEngine.GetEngine().deltaTime;
 
 		checkDamageFeedback();
 
@@ -618,7 +360,7 @@ public:
 	}
 
 	void OnUpdate() override {
-		position.y -= moveSpeed * engine.deltaTime;
+		position.y -= moveSpeed * myEngine.GetEngine().deltaTime;
 
 		if (position.y < -300) {
 			Destroy();
@@ -691,7 +433,7 @@ public:
 		asteroid->asteroidSize = size;
 		asteroid->moveSpeed.x = speedX;
 		asteroid->moveSpeed.y = speedY;
-		engine.getLevel()->addObject(asteroid);
+		myEngine.GetEngine().getLevel()->addObject(asteroid);
 	}
 
 	void OnDestroyed() override {
@@ -720,8 +462,8 @@ public:
 
 	void OnUpdate() override {
 
-		position.x += moveSpeed.x * engine.deltaTime;
-		position.y -= moveSpeed.y * engine.deltaTime;
+		position.x += moveSpeed.x * myEngine.GetEngine().deltaTime;
+		position.y -= moveSpeed.y * myEngine.GetEngine().deltaTime;
 
 		if (position.x > 350 || position.x < -350) {
 			Destroy();
@@ -749,7 +491,7 @@ public:
 			explosion* boom = new explosion();
 			boom->position.x = position.x;
 			boom->position.y = position.y;
-			engine.getLevel()->addObject(boom);
+			myEngine.GetEngine().getLevel()->addObject(boom);
 
 		}
 	}
@@ -784,9 +526,9 @@ public:
 
 	void OnUpdate() override {
 
-		position.y -= moveSpeed * engine.deltaTime;
+		position.y -= moveSpeed * myEngine.GetEngine().deltaTime;
 
-		elapsedTime += engine.deltaTime;
+		elapsedTime += myEngine.GetEngine().deltaTime;
 		sinValue = (sin(4.f * elapsedTime) * 0.6f);
 		position.x = aux + (sin(4.f * elapsedTime) * 40.f);
 
@@ -804,7 +546,7 @@ public:
 			explosion* boom = new explosion();
 			boom->position.x = position.x;
 			boom->position.y = position.y;
-			engine.getLevel()->addObject(boom);
+			myEngine.GetEngine().getLevel()->addObject(boom);
 
 			if (missile* missileContact = dynamic_cast<missile*>(&contact)) {
 
@@ -839,7 +581,7 @@ public:
 	
 		if (myDroneNumber != 0)
 		{
-				time += 1 * engine.deltaTime;
+				time += 1 * myEngine.GetEngine().deltaTime;
 				if (time > spawnCooldown) 
 				{
 					drone* peasent = new drone(true, false, true);
@@ -849,7 +591,7 @@ public:
 					peasent->position.x = position.x + phaseOffset;
 					peasent->position.y = position.y;
 					peasent->phaseOffset = phaseOffset;
-					engine.getLevel()->addObject(peasent);
+					myEngine.GetEngine().getLevel()->addObject(peasent);
 					time = 0;
 					myDroneNumber--;
 				}
@@ -881,13 +623,13 @@ public:
 	}
 
 	void OnUpdate() override {
-		time += engine.deltaTime;
+		time += myEngine.GetEngine().deltaTime;
 		if (time > spawnCooldown) {
 			metalAsteroid* entity = new metalAsteroid(true, false, true);
 
 			entity->position.x = getRandomFloat(-290.f, 290.f);
 			entity->position.y = 300.0f;
-			engine.getLevel()->addObject(entity);
+			myEngine.GetEngine().getLevel()->addObject(entity);
 			time = 0;
 		}
 	}
@@ -910,75 +652,17 @@ public:
 	}
 
 	void OnUpdate() override {
-		time += engine.deltaTime;
+		time += myEngine.GetEngine().deltaTime;
 		if (time > spawnCooldown) {
 			stoneAsteroid* entity = new stoneAsteroid(true, false, true);
 
 			entity->asteroidSize = asteroidSizes[getRandomInt(0, 3)];
 			entity->position.x = getRandomFloat(-280, 280);
 			entity->position.y = 300.f;
-			engine.getLevel()->addObject(entity);
+			myEngine.GetEngine().getLevel()->addObject(entity);
 			time = 0;
 		}
 	}
-};
-
-class ally : public Pawn {
-public:
-	ally(bool visibility = true, bool isBullet = false, bool hasSense = false)
-		: Pawn(visibility, isBullet, hasSense) {
-	}
-	float shipHealthMax = 5.f;
-	float shipHealth = 5.f;
-
-	bool keyPressed = false;
-
-	int firePower = 0;
-
-	int positionOffset = 0;
-
-	struct
-	{
-		int x = 0;
-		int y = 0;
-	}bulletOffset;
-
-
-	virtual void TakeShipDamage(){
-		if (damageCooldown <= 0)
-		{
-			shipHealth -= 1;
-			damageCooldown = damageCooldownDefault;
-		}
-	}
-
-	virtual void checkDamageCooldown() {
-		if (damageCooldown > 0)
-		{
-			damageCooldown -= 1 * engine.deltaTime;
-		}
-		else {
-			damageCooldown = 0;
-		}
-	}
-	void ShootCheck() {
-		if (input.IsGamepadButtonPressed(GamepadButton::A, false)) {
-			if (!keyPressed) {
-				missile* bullet = new missile(true, true, true);
-				bullet->position.x = position.x + bulletOffset.x;
-				bullet->position.y = position.y + bulletOffset.y;
-				bullet->firePower = firePower;
-				engine.getLevel()->addObject(bullet);
-				keyPressed = true;
-			}
-		}
-		else {
-			keyPressed = false;
-		}
-	};
-protected:
-	float damageCooldownDefault = 1;
-	float damageCooldown = 0;
 };
 
 class companion : public ally {
@@ -1046,7 +730,7 @@ public:
 			boom->position.y = position.y;
 			isInit = false;
 			animation = new Animation("resources/graphics/clone.bmp", 1.f, textureDimentions, false, {19});
-			engine.getLevel()->addObject(boom);
+			myEngine.GetEngine().getLevel()->addObject(boom);
 			TakeShipDamage();
 			contact.Destroy();
 		}
@@ -1128,14 +812,14 @@ public:
 		playerLifesUI = new PlayerLife("resources/graphics/PULife.bmp", 0.15f, 0.17f, -290.f, -160.f, true, 1, 1, lives, 1, lifeTiles);
 		playerLifesUI->SetSortingLayer(9);
 		playerLifesUI->UpdateNumberOfLives(lives);
-		engine.getLevel()->addBackground(playerLifesUI);
+		engine->GetEngine().getLevel()->addBackground(playerLifesUI);
 
 		std::vector<int> healthTiles = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 		playerHealthUI = new PlayerHealth("resources/graphics/Blocks.bmp", 0.02f, 0.1f, -305.f, -210.f, true, 64, 16, 20, 1, healthTiles);
 		playerHealthUI->SetSortingLayer(9);
 		//playerHealthUI->UpdateHPBar(100.f);
 		playerHealthUI->SetColor(0.f, 1.f, 0.f, 1.f);
-		engine.getLevel()->addBackground(playerHealthUI);
+		engine->GetEngine().getLevel()->addBackground(playerHealthUI);
 	}
 
 	void OnAnimationFinish() override 
@@ -1201,17 +885,17 @@ public:
 			float auxX = position.x;
 			float auxY = position.y;
 
-			auxX += moveX * movementSpeed * engine.deltaTime;
-			auxY += moveY * movementSpeed * engine.deltaTime;
+			auxX += moveX * movementSpeed * engine->GetEngine().deltaTime;
+			auxY += moveY * movementSpeed * engine->GetEngine().deltaTime;
 
 			if (auxX < limits[0] && auxX > limits[2])
 			{
-				position.x += moveX * movementSpeed * engine.deltaTime;
+				position.x += moveX * movementSpeed * engine->GetEngine().deltaTime;
 			}
 
 			if (auxY >= limits[1] && auxY <= limits[3])
 			{
-				position.y += moveY * movementSpeed * engine.deltaTime;
+				position.y += moveY * movementSpeed * engine->GetEngine().deltaTime;
 			}
 		}
 
@@ -1292,7 +976,7 @@ public:
 		{
 			companion* companion1 = new companion(true, false, true);
 			myCompanions.push_back(companion1);
-			engine.getLevel()->addObject(companion1);
+			engine->GetEngine().getLevel()->addObject(companion1);
 		}
 	}
 
@@ -1303,7 +987,7 @@ public:
 			boom->position.x = position.x;
 			boom->position.y = position.y;
 
-			engine.getLevel()->addObject(boom);
+			engine->GetEngine().getLevel()->addObject(boom);
 			TakeShipDamage();
 
 			contact.Destroy();
@@ -1335,7 +1019,7 @@ public:
 	{
 		if (damageCooldown > 0)
 		{
-			damageCooldown -= 1 * engine.deltaTime;
+			damageCooldown -= 1 * engine->GetEngine().deltaTime;
 		}
 		else {
 			damageCooldown = 0;
@@ -1376,12 +1060,12 @@ public:
 	}
 
 	void OnUpdate() override {
-		time += engine.deltaTime;
+		time += engine->GetEngine().deltaTime;
 		if (time > spawnCooldown) {
 			dronePack* enemy = new dronePack(true, false, true);
 			enemy->position.x = getRandomFloat(-240.f, 240.f);
 			enemy->position.y = 300.0f;
-			engine.getLevel()->addObject(enemy);
+			engine->GetEngine().getLevel()->addObject(enemy);
 			time = 0;
 		}
 	}
@@ -1403,13 +1087,13 @@ public:
 	}
 
 	void OnUpdate() override {
-		time += 1 * engine.deltaTime;
+		time += 1 * engine->GetEngine().deltaTime;
 		if (time > spawnCooldown) {
 			rusher* enemy = new rusher(true, false, true);
 			enemy->SetSortingLayer(3);
 			enemy->position.x = getRandomFloat(-290.f, 290.f);
 			enemy->position.y = 300.0f;
-			engine.getLevel()->addObject(enemy);
+			engine->GetEngine().getLevel()->addObject(enemy);
 			time = 0;
 		}
 	}
@@ -1430,13 +1114,13 @@ public:
 	float time = 0.0f;
 
 	void OnUpdate() override {
-		time += 1 * engine.deltaTime;
+		time += 1 * engine->GetEngine().deltaTime;
 		if (time > spawnCooldown) {
 			loner* enemy = new loner(true, false, true);
 			enemy->SetSortingLayer(3);
 			enemy->position.x = -350.0f;
 			enemy->position.y = getRandomFloat(0.f, 205.f);
-			engine.getLevel()->addObject(enemy);
+			engine->GetEngine().getLevel()->addObject(enemy);
 			time = 0;
 		}
 	}
@@ -1458,7 +1142,7 @@ int main()
 	gameWindow.windowHeight = 480;
 
 	MyLevel* level = new MyLevel(10);
-	engine.setLevel(level);
+	engine->GetEngine().setLevel(level);
 
 
 	LevelBackground* baseBackground = new LevelBackground("resources/graphics/galaxy2.bmp", 2.f, 2.f, 0.f, 0.f);
@@ -1508,32 +1192,27 @@ int main()
 
 	myUIScore->SetSortingLayer(9);
 
-	engine.getLevel()->addUIText(myUIScore);
+	engine->GetEngine().getLevel()->addUIText(myUIScore);
 
 	spaceship* ship = new spaceship();
 	ship->SetSortingLayer(4);
-	engine.getLevel()->addObject(ship);
+	engine->GetEngine().getLevel()->addObject(ship);
 	
 	rusherSpawner* spawner = new rusherSpawner();
-	engine.getLevel()->addObject(spawner);
+	engine->GetEngine().getLevel()->addObject(spawner);
 
 	lonerSpawner* spawner2 = new lonerSpawner();
-	engine.getLevel()->addObject(spawner2);
+	engine->GetEngine().getLevel()->addObject(spawner2);
 
 	metalAsteroidSpawner* spawner3 = new metalAsteroidSpawner();
-	engine.getLevel()->addObject(spawner3);
+	engine->GetEngine().getLevel()->addObject(spawner3);
 	
 	stoneAsteroidSpawner* spawner4 = new stoneAsteroidSpawner();
-	engine.getLevel()->addObject(spawner4);
+	engine->GetEngine().getLevel()->addObject(spawner4);
 	
 	droneSpawner* spawner5 = new droneSpawner();
-	engine.getLevel()->addObject(spawner5);
-	
-	powerUpCompanion* p1 = new powerUpCompanion();
-	p1->position.x = 0.f;
-	p1->position.y = 250;
-	engine.getLevel()->addObject(p1);
+	engine->GetEngine().getLevel()->addObject(spawner5);
 
-	engine.Initialize(gameWindow);
+	engine->GetEngine().Initialize(gameWindow);
 
 }

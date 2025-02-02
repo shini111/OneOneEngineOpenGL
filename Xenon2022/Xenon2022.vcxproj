@@ -135,7 +135,20 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Ally.cpp" />
+    <ClCompile Include="src\Enemy.cpp" />
+    <ClCompile Include="src\Missile.cpp" />
+    <ClCompile Include="src\MyLevel.cpp" />
+    <ClCompile Include="src\PowerUps.cpp" />
     <ClCompile Include="src\Xenon2022.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Ally.h" />
+    <ClInclude Include="src\Enemy.h" />
+    <ClInclude Include="src\Missile.h" />
+    <ClInclude Include="src\MyEngine.h" />
+    <ClInclude Include="src\MyLevel.h" />
+    <ClInclude Include="src\PowerUps.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
