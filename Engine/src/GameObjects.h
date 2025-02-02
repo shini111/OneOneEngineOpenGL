@@ -41,6 +41,7 @@ public:
 	float elapsedTime = 0.f;
 
 	bool hasBox2d = true;
+	bool box2dCreated = false;
 
 
 	Animation* animation;
@@ -83,6 +84,7 @@ public:
 	bool visible = true;
 	bool isBullet = false;
 	bool hasSense = false;
+	bool isContact = false;
 
 	virtual void OnStart() {};
 	virtual void OnUpdate() {};

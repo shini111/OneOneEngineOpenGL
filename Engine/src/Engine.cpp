@@ -16,10 +16,6 @@
 #include "SDL_gamecontroller.h"
 #include "stb_image.h"
 
-
-//SDL_Renderer* SDL_CreateRenderer(SDL_Window* window, int index, Uint32 flags);
-//SDL_Texture* SDL_CreateTextureFromSurface(SDL_Renderer* renderer, SDL_Surface* surface);
-
 Input input;
 
 enum CharEnum {
@@ -119,8 +115,6 @@ enum CharEnum {
 	RIGHT_CURLY = 93,
 	UNKNOWN = 94
 };
-
-
 
 std::vector<char> isolateChars(const std::string& str) {
 	std::vector<char> chars;
@@ -237,8 +231,8 @@ b2Vec2 gravity = { 0.0f, 0.0f };
 b2WorldDef worldDef = b2DefaultWorldDef();
 b2WorldId worldId = b2CreateWorld(&worldDef);
 
-float timeStep = 1.0f / 60.0f;
-int subStepCount = 2;
+float timeStep = 1.0f / 120.0f;
+int subStepCount = 20;
 // int32 velocityIterations = 8;
 // int32 positionIterations = 3;
 
@@ -355,7 +349,7 @@ namespace GameEngine {
 			deltaTime = (currentTime - prevTime) / 1000.0f;
 
 
-
+			//Clear layer list
 			for (int i = 0; i < getLevel()->listOfLayers.size(); i++)
 			{
 				getLevel()->listOfLayers[i].clear();
@@ -394,11 +388,11 @@ namespace GameEngine {
 					getLevel()->levelObjects.erase(getLevel()->levelObjects.begin() + i);
 				}
 			}
-
+			/*
 			for (int i = getLevel()->levelObjects.size() - 1; i >= 0; --i)
 			{
 				auto obj = getLevel()->levelObjects[i];
-				if (obj->bodyId != nullptr)
+				if (obj->box2dCreated)
 				{
 					b2DestroyBody(*obj->bodyId);
 					delete obj->bodyDef;
@@ -408,7 +402,7 @@ namespace GameEngine {
 					delete obj->shapeDef;
 				}
 			}
-
+			*/
 			//Sort/Update Level Objects
 			for (int i = 0; i < getLevel()->levelObjects.size(); ++i)
 			{
@@ -429,30 +423,27 @@ namespace GameEngine {
 
 				Animation* spriteAnimation = obj->animation;
 
-				//THIS IS TO IGNORE SPAWNERS. THE FIRST TWO OBJECTS IN THE LEVEL OBJECTS VECTOR ARE SPAWNERS
-					//This is a just a workaround for now. I will implement a better way to handle this later, because i need to create
-					//a bool variable for objects for the user to want or not a box2d body but right now i dont have time for that.
 
-				if (getLevel()->levelObjects[i]->hasBox2d)
+				//Create box2D
+				//Attempting to only Create the box2D once to see what happens
+				if (getLevel()->levelObjects[i]->hasBox2d && !getLevel()->levelObjects[i]->box2dCreated)
 				{
-					float bodyWidth;// = getLevel()->levelObjects[i]->collisionBoxSize.w;
-					float bodyHeight;// = getLevel()->levelObjects[i]->collisionBoxSize.h;
+					float bodyWidth;
+					float bodyHeight;
 					bodyWidth = getLevel()->levelObjects[i]->collisionBoxSize.w / 2.0f;
 					bodyHeight = getLevel()->levelObjects[i]->collisionBoxSize.h / 2.0f;
-
 
 					b2BodyDef* bodyDef = new b2BodyDef;
 					*bodyDef = b2DefaultBodyDef();
 					bodyDef->type = b2_dynamicBody;
 					bodyDef->position = { getLevel()->levelObjects[i]->position.x, getLevel()->levelObjects[i]->position.y };
-					//bodyDef-> = getLevel()->levelObjects[i]->isBullet;
+					bodyDef->isBullet = getLevel()->levelObjects[i]->isBullet;
 					bodyDef->userData = getLevel()->levelObjects[i];
-
 
 					b2BodyId* bodyId = new b2BodyId;
 					*bodyId = b2CreateBody(worldId, bodyDef);
 
-					b2Vec2 bodyCenter{ bodyWidth, bodyHeight };
+					b2Vec2 bodyCenter{ 0.f, bodyHeight };
 					float angle = 4.0f;
 
 					b2Polygon* dynamicBox = new b2Polygon;
@@ -483,10 +474,26 @@ namespace GameEngine {
 					getLevel()->levelObjects[i]->shapeId = shapeId;
 					getLevel()->levelObjects[i]->shapeDef = shapeDef;
 					getLevel()->levelObjects[i]->boxCollision = dynamicBox;
+					getLevel()->levelObjects[i]->box2dCreated = true;
+				}
+				
+				//Update box2D Position !!TEST!!
+				if (obj->bodyId != nullptr)
+				{
+					if (b2Body_IsValid(*obj->bodyId))
+					{
+						//b2Vec2 position{ (obj->position.x / 320.f), (obj->position.y / 240.f) };
+						b2Vec2 position{ (obj->position.x), (obj->position.y) };
+						b2Rot rotation{ obj->bodyDef->rotation.c, obj->bodyDef->rotation.s };
+
+						b2Body_SetTransform(*obj->bodyId, position, rotation);
+					}
 				}
 
-				b2World_Step(worldId, timeStep, subStepCount);
-				contactListener();
+					b2World_Step(worldId, timeStep, subStepCount);
+					contactListener();
+
+				
 
 				while (SDL_PollEvent(&event) != 0) {
 					if (event.type == SDL_QUIT) {
@@ -515,7 +522,6 @@ namespace GameEngine {
 							{
 								if (!(it)->isInit)
 								{
-									std::cout << "shader program is null\n" << std::endl;
 
 									glGenBuffers(1, &(it)->m_vbo); // Generate 1 buffer
 
