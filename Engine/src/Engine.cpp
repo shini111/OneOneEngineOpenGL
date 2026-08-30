@@ -2,6 +2,7 @@
 #include "Objects.h"
 
 #include <cstdint>
+#include <algorithm>
 
 #include <glm/glm.hpp>
 #include <glad/glad.h>
@@ -175,19 +176,24 @@ namespace GameEngine {
 		{
 			b2ContactBeginTouchEvent* beginTouch = contactEvents.beginEvents + i;
 			void* myUserData = b2Shape_GetUserData(beginTouch->shapeIdA);
-			if (myUserData)
+			void* myUserData2 = b2Shape_GetUserData(beginTouch->shapeIdB);
+
+			if (myUserData && myUserData2)
 			{
 				GameObject* m = static_cast<GameObject*>(myUserData);
+				GameObject* m2 = static_cast<GameObject*>(myUserData2);
 
-				void* myUserData2 = b2Shape_GetUserData(beginTouch->shapeIdB);
-
-
-				if (myUserData2)
-				{
-					GameObject* m2 = static_cast<GameObject*>(myUserData2);
-					m->OnCollideEnter(*m2);
-
-				}
+				// Box2D doesn't guarantee which shape ends up as A vs B for a given
+				// contact, so both sides need to be notified. Only calling
+				// m->OnCollideEnter(*m2) meant whichever object type has no reaction
+				// to the contact (e.g. a bullet, which never overrides OnCollideEnter)
+				// "won" purely by chance whenever Box2D happened to put it in the A
+				// slot -- the object that should have reacted (the thing it hit) was
+				// never even told about the contact. That's what made bullets look
+				// like they pass through enemies "sometimes": it depended on Box2D's
+				// internal shape ordering, not on anything about the collision itself.
+				m->OnCollideEnter(*m2);
+				m2->OnCollideEnter(*m);
 			}
 		}
 	}
@@ -386,12 +392,20 @@ namespace GameEngine {
 					b2BodyId* bodyId = new b2BodyId;
 					*bodyId = b2CreateBody(worldId, bodyDef);
 
-					b2Vec2 bodyCenter{ 0.f, bodyHeight };
-					float angle = 4.0f;
-
+					// The box must be centered on the body origin (bodyCenter = 0,0) because
+					// the body origin is set to obj->position above, and that's also exactly
+					// where the sprite is drawn (see the renderer: it translates to position
+					// then scales a quad centered at its own origin). This used to be offset
+					// by a full half-height ({0.f, bodyHeight}, i.e. bodyCenter{0.f, bodyHeight}
+					// with an extra 4*pi "rotation" that was actually a no-op), which shifted
+					// every object's hitbox away from its visible sprite by half that object's
+					// own collision height -- 8px for a missile, up to 48px for a large
+					// asteroid. Two sprites could visually overlap with their real (shifted)
+					// hitboxes nowhere near each other, or "collide" while still visually
+					// apart, which is exactly the sometimes-early/sometimes-late/sometimes-
+					// never pattern being reported.
 					b2Polygon* dynamicBox = new b2Polygon;
-					//*dynamicBox = b2MakeBox(bodyWidth, bodyHeight);
-					*dynamicBox = b2MakeOffsetBox(bodyWidth, bodyHeight, bodyCenter, b2MakeRot(angle * b2_pi));
+					*dynamicBox = b2MakeBox(bodyWidth, bodyHeight);
 
 					b2ShapeDef* shapeDef = new b2ShapeDef;
 					*shapeDef = b2DefaultShapeDef();
@@ -420,27 +434,75 @@ namespace GameEngine {
 					getLevel()->levelObjects[i]->box2dCreated = true;
 				}
 				
-				//Update box2D Position !!TEST!!
+				//Drive the box2D body from the object's own authoritative position using
+				//velocity instead of an instant SetTransform "teleport". Box2D's docs say
+				//SetTransform "acts as a teleport" -- it has no notion of the path taken
+				//between frames, so continuous collision (isBullet) never sees a fast object
+				//sweep past a thin collider between two teleports, and the hit is just missed.
+				//Setting velocity instead lets Box2D actually integrate the motion during the
+				//physics step below, so continuous collision can catch it. We snap the body
+				//back to the exact authoritative position afterwards (see below the step
+				//loop), so the game's own movement code still fully owns where things end up
+				//-- Box2D is only used here to detect what the object would have hit along
+				//the way, never to move it.
 				if (obj->bodyId != nullptr)
 				{
 					if (b2Body_IsValid(*obj->bodyId))
 					{
-						b2Vec2 position{ (obj->position.x), (obj->position.y) };
-						b2Rot rotation{ obj->bodyDef->rotation.c, obj->bodyDef->rotation.s };
+						b2Vec2 targetPosition{ obj->position.x, obj->position.y };
+						b2Vec2 currentBodyPosition = b2Body_GetPosition(*obj->bodyId);
 
-						b2Body_SetTransform(*obj->bodyId, position, rotation);
+						b2Vec2 velocity{ 0.f, 0.f };
+						if (deltaTime > 0.0f)
+						{
+							velocity.x = (targetPosition.x - currentBodyPosition.x) / deltaTime;
+							velocity.y = (targetPosition.y - currentBodyPosition.y) / deltaTime;
+						}
+
+						b2Body_SetLinearVelocity(*obj->bodyId, velocity);
 					}
 				}
+			}
 
-					b2World_Step(worldId, timeStep, subStepCount);
-					contactListener();
+			// Step physics once per frame (not once per object!), using a fixed-timestep
+			// accumulator so the simulated time matches real elapsed time (deltaTime)
+			// regardless of framerate or how many objects are on screen. All object
+			// velocities above have already been synced for this frame before we step,
+			// so contact events reflect this frame's motion consistently for every object,
+			// and fast/bullet-flagged bodies can be swept by Box2D's continuous collision.
+			// Clamp so a single slow frame (asset loading, a breakpoint, a stall) can't
+			// dump a huge deltaTime into the accumulator and trigger a burst of dozens
+			// of world steps in one go, which would only make things feel more delayed.
+			physicsAccumulator += std::min(deltaTime, 0.25f);
+			while (physicsAccumulator >= timeStep)
+			{
+				b2World_Step(worldId, timeStep, subStepCount);
+				contactListener();
+				physicsAccumulator -= timeStep;
+			}
 
-				
+			// Now that Box2D has had a chance to sweep each body's velocity-driven motion
+			// (so continuous collision could catch anything a fast object would have hit),
+			// snap every body's transform back to the object's own authoritative position.
+			// This keeps rendering and next frame's velocity calculation exactly in sync
+			// with the game's manual position tracking, and stops the body drifting on its
+			// own from any leftover velocity/momentum between frames.
+			for (int i = 0; i < getLevel()->levelObjects.size(); ++i)
+			{
+				GameObject* syncObj = getLevel()->levelObjects[i];
+				if (syncObj->bodyId != nullptr && b2Body_IsValid(*syncObj->bodyId))
+				{
+					b2Vec2 position{ syncObj->position.x, syncObj->position.y };
+					b2Rot rotation{ syncObj->bodyDef->rotation.c, syncObj->bodyDef->rotation.s };
 
-				while (SDL_PollEvent(&event) != 0) {
-					if (event.type == SDL_QUIT) {
-						isRunning = false;
-					}
+					b2Body_SetTransform(*syncObj->bodyId, position, rotation);
+					b2Body_SetLinearVelocity(*syncObj->bodyId, b2Vec2{ 0.f, 0.f });
+				}
+			}
+
+			while (SDL_PollEvent(&event) != 0) {
+				if (event.type == SDL_QUIT) {
+					isRunning = false;
 				}
 			}
 

@@ -199,3 +199,15 @@ void spaceship::UpdateHealthPercent() {
 	float percentHealth = (shipHealth / shipHealthMax) * 100;
 	playerHealthUI->UpdateHPBar(percentHealth);
 }
+
+void spaceship::TakeShipDamage() {
+	// ally::TakeShipDamage() only decrements shipHealth (with its cooldown check) --
+	// it has no idea the UI bar exists, since that's a spaceship-only member. Every
+	// call site (OnCollideEnter's "enemyBullet" and "enemy" branches) was relying on
+	// remembering to refresh the bar separately, and none of them did, so shipHealth
+	// was dropping correctly (death/respawn still worked) while the on-screen bar
+	// just sat there unchanged until a heal or respawn happened to reset it. Overriding
+	// here means the bar updates automatically no matter what calls TakeShipDamage().
+	ally::TakeShipDamage();
+	UpdateHealthPercent();
+}

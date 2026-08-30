@@ -53,6 +53,7 @@ namespace GameEngine {
 
 		float timeStep = 1.0f / 120.0f;
 		int subStepCount = 20;
+		float physicsAccumulator = 0.0f;
 
 	};
 

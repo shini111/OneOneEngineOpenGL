@@ -15,6 +15,7 @@ public:
 	void OnCollideEnter(GameObject& contact) override;
 	void OnAnimationFinish() override;
 
+	void TakeShipDamage() override;
 	void HealShip();
 	void UpgradeFirePower();
 	void RecruitCompanion();
